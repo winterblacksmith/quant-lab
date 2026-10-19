@@ -44,6 +44,15 @@ optimizer: researchers choose parameters from training evidence and reserve the
 test result for out-of-sample evaluation. Older exported experiments without a
 split remain importable and display their original full-period result.
 
+Optional expanding walk-forward validation begins at that same test boundary. Each
+fold trains from the selected start through the prior fold, then evaluates the next
+non-overlapping 3–252-observation test window. A final short remainder is included
+in the preceding fold; fewer than two folds is rejected. Strategy state is continuous
+across the training/test boundary within each fold, but each fold is independently
+initialized to avoid carrying capital between repeated simulations. Aggregate
+strategy and benchmark returns compound only the disjoint out-of-sample windows.
+The validator applies one fixed configuration and does not search or rank parameters.
+
 The moving-average filter owns the asset when the close at `t-1` is strictly
 greater than the arithmetic average of closes `t-lookback` through `t-1`.
 Equality means cash. It uses the same delayed execution, long-or-cash sizing,

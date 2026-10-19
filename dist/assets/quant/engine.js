@@ -1,4 +1,4 @@
-export const VERSION = '1.2.0';
+export const VERSION = '1.3.0';
 export function validateRows(rows) {
   if (!Array.isArray(rows) || rows.length < 3 || rows.length > 20000) throw new Error('Provide 3–20,000 daily observations.');
   rows.forEach((r, i) => {
@@ -85,5 +85,46 @@ export function backtest(rows, config) {
       test:{start:selected[split].date,end:selected.at(-1).date,strategy:periodMetrics(strategyResult,split,selected.length,capital),benchmark:periodMetrics(benchmark,split,selected.length,capital)}
     };
   }
-  return {version:VERSION,config:{...config},strategy:strategyResult,benchmark,periods};
+  const result={version:VERSION,config:{...config},strategy:strategyResult,benchmark,periods};
+  result.walkForward=config.walkForwardWindow===undefined?null:walkForward(rows,config,config.walkForwardWindow);
+  return result;
+}
+
+export function walkForward(rows, config, testWindow) {
+  if (!Number.isInteger(testWindow) || testWindow < 3 || testWindow > 252) {
+    throw new Error('Choose a walk-forward test window of 3–252 observations.');
+  }
+  const selected=rows.filter(row=>row.date>=config.start&&row.date<=config.end);
+  const firstTest=selected.findIndex(row=>row.date===config.testStart);
+  if (firstTest < 3) throw new Error('Walk-forward validation needs a valid initial test date after at least three training observations.');
+  const folds=[];
+  let cursor=firstTest;
+  while (selected.length-cursor>=3) {
+    let next=Math.min(cursor+testWindow,selected.length);
+    if (selected.length-next<3) next=selected.length;
+    const foldResult=backtest(rows,{...config,end:selected[next-1].date,testStart:selected[cursor].date,walkForwardWindow:undefined});
+    const test=foldResult.periods.test;
+    folds.push({
+      number:folds.length+1,
+      trainingStart:selected[0].date,
+      trainingEnd:selected[cursor-1].date,
+      trainingObservations:cursor,
+      testStart:selected[cursor].date,
+      testEnd:selected[next-1].date,
+      testObservations:next-cursor,
+      strategy:test.strategy,
+      benchmark:test.benchmark
+    });
+    cursor=next;
+  }
+  if (folds.length<2) throw new Error('Choose a date range with enough test observations for at least two walk-forward folds.');
+  const compound=key=>folds.reduce((growth,fold)=>growth*(1+fold[key].totalReturn),1)-1;
+  return {
+    testWindow,
+    folds,
+    strategyReturn:compound('strategy'),
+    benchmarkReturn:compound('benchmark'),
+    positiveFolds:folds.filter(fold=>fold.strategy.totalReturn>0).length,
+    winningFolds:folds.filter(fold=>fold.strategy.totalReturn>fold.benchmark.totalReturn).length
+  };
 }

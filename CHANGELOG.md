@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-19
+
+- Added optional expanding walk-forward validation. It evaluates a fixed strategy
+  configuration over consecutive, non-overlapping test windows and compounds only
+  out-of-sample returns against the benchmark.
+
 ## 2026-10-18
 
 - Added a fixed training/test split to each new backtest. Strategy state carries

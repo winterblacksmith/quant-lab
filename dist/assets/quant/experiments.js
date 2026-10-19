@@ -1,4 +1,4 @@
-import {backtest, validateRows} from './engine.js?v=1f4519778a62';
+import {backtest, validateRows} from './engine.js?v=d2130638506f';
 
 export const MAX_IMPORTED_BYTES = 5_000_000;
 

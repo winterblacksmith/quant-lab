@@ -1,7 +1,8 @@
 # Orion Quant Lab backlog
 
 ## Next
-- Add walk-forward validation before any parameter search.
+- Add guarded parameter comparison using training evidence only; show the number of
+  configurations tried and keep all test results out of ranking.
 
 ## Later
 - Additional strategies and Strategy Arena using the priorities and readiness rules in
@@ -12,6 +13,8 @@
 - Add a second asset only after its data quality and adjustment basis are documented.
 
 ## Completed
+- Expanding walk-forward validation with non-overlapping out-of-sample folds and
+  compounded strategy-versus-benchmark test returns.
 - Fixed train/test separation with continuous portfolio state, independent period
   metrics, and an explicit out-of-sample test result.
 - `/quant/` landing page and `/quant/lab/` research workspace.

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {backtest,drawdowns,parseCSV,metrics} from '../dist/assets/quant/engine.js';
+import {backtest,drawdowns,parseCSV,metrics,walkForward} from '../dist/assets/quant/engine.js';
 const rows=prices=>prices.map((close,i)=>({date:`2024-01-${String(i+1).padStart(2,'0')}`,close}));
 const config={start:'2024-01-03',end:'2024-01-06',capital:100,lookback:1,feeBps:0,strategy:'momentum'};
 test('hold matches hand-calculated equity and benchmark',()=>{const r=backtest(rows([100,100,100,120,90,110]),{...config,strategy:'hold'});assert.equal(r.strategy.metrics.finalValue,110);assert.deepEqual(r.strategy,r.benchmark);assert.ok(Math.abs(r.strategy.metrics.maxDrawdown+.25)<1e-12);});
@@ -53,4 +53,24 @@ test('moving-average filter enforces warmup, charges both trades, and prevents l
   const changed=backtest(rows([10,10,12,11,900,1]),{...settings,feeBps:100});
   assert.deepEqual(result.strategy.curve[0].shares,changed.strategy.curve[0].shares);
   assert.equal(result.strategy.trades[0].date,changed.strategy.trades[0].date);
+});
+
+test('walk-forward compounds only consecutive out-of-sample windows',()=>{
+  const data=rows([90,95,100,105,110,120,126,132,138,144,150,156]);
+  const settings={...config,strategy:'hold',start:'2024-01-03',end:'2024-01-12',testStart:'2024-01-07'};
+  const result=walkForward(data,settings,3);
+  assert.equal(result.folds.length,2);
+  assert.deepEqual(result.folds.map(fold=>[fold.trainingObservations,fold.testObservations]),[[4,3],[7,3]]);
+  assert.deepEqual(result.folds.map(fold=>[fold.testStart,fold.testEnd]),[['2024-01-07','2024-01-09'],['2024-01-10','2024-01-12']]);
+  assert.ok(Math.abs(result.strategyReturn-(156/120-1))<1e-12);
+  assert.equal(result.strategyReturn,result.benchmarkReturn);
+});
+
+test('walk-forward rejects unusable windows and preserves earlier fold results',()=>{
+  const settings={...config,start:'2024-01-03',end:'2024-01-12',testStart:'2024-01-07'};
+  const original=rows([90,95,100,105,110,120,126,132,138,144,150,156]);
+  const changed=rows([90,95,100,105,110,120,126,132,138,1,1000,1]);
+  assert.deepEqual(walkForward(original,settings,3).folds[0],walkForward(changed,settings,3).folds[0]);
+  assert.throws(()=>walkForward(original,settings,2),/3–252/);
+  assert.throws(()=>walkForward(original,{...settings,testStart:'2024-01-10'},3),/at least two/);
 });

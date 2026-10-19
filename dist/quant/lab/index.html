@@ -17,7 +17,7 @@
     <link rel="icon" href="/assets/atlas-shell/favicon.svg?v=727f2134fbea" />
     <link rel="stylesheet" href="/assets/atlas-shell/style.css?v=c8e5262a760c" />
     <script src="/assets/atlas-shell/theme.js?v=e03df0f86d0c"></script>
-    <link rel="stylesheet" href="/assets/quant/quant.css?v=1364d01bcf90" />
+    <link rel="stylesheet" href="/assets/quant/quant.css?v=6e0be4bd43ef" />
   </head>
   <body data-page="quant">
     <a class="skip" href="#main">Skip to content</a>
@@ -109,6 +109,25 @@
                   test period.</span
                 ></label
               >
+              <label class="check-field"
+                ><input id="walk-forward" type="checkbox" />
+                <span>Run expanding walk-forward validation</span></label
+              >
+              <label
+                >Test window · trading days<input
+                  id="walk-forward-window"
+                  type="number"
+                  min="3"
+                  max="252"
+                  value="20"
+                  disabled
+                  required
+                />
+                <span class="fine"
+                  >Starts at the test date, then evaluates consecutive untouched windows while the
+                  training history expands.</span
+                ></label
+              >
               <label
                 >Starting capital · USD<input
                   id="capital"
@@ -166,6 +185,34 @@
                       </tr>
                     </thead>
                     <tbody id="periods"></tbody>
+                  </table>
+                </div>
+              </section>
+              <section
+                id="walk-forward-results"
+                class="panel period-panel"
+                aria-labelledby="walk-forward-title"
+                hidden
+              >
+                <div class="result-heading">
+                  <h2 id="walk-forward-title">Walk-forward validation</h2>
+                  <span class="fine">Only non-overlapping test windows are aggregated</span>
+                </div>
+                <p id="walk-forward-summary" class="fine"></p>
+                <div class="table-wrap period-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fold</th>
+                        <th>Expanding training dates</th>
+                        <th>Test dates</th>
+                        <th>Test days</th>
+                        <th>Strategy return</th>
+                        <th>B&amp;H return</th>
+                        <th>Strategy Sharpe</th>
+                      </tr>
+                    </thead>
+                    <tbody id="walk-forward-folds"></tbody>
                   </table>
                 </div>
               </section>
@@ -318,9 +365,11 @@
             <p>
               Choose parameters using the training period, then treat the test period as untouched
               out-of-sample evidence. Repeatedly changing parameters after viewing the test result
-              also overfits it. A single ETF and one split do not establish robustness. Imported
-              data must have a consistent daily frequency and adjustment basis. Historical results
-              do not predict future returns.
+              also overfits it. Expanding walk-forward validation repeats that evaluation across
+              consecutive, non-overlapping test windows and compounds only their test returns; it
+              does not tune parameters automatically. A single ETF and a small number of folds do
+              not establish robustness. Imported data must have a consistent daily frequency and
+              adjustment basis. Historical results do not predict future returns.
             </p>
           </details>
         </section>
@@ -379,6 +428,6 @@
       <div class="palette-help">↑ ↓ navigate <span>↵ open</span></div>
     </dialog>
     <script src="/assets/atlas-shell/app.js?v=d10815200a08" defer></script>
-    <script type="module" src="/assets/quant/lab.js?v=a9112f07e6e3"></script>
+    <script type="module" src="/assets/quant/lab.js?v=42dcfcbdfbef"></script>
   </body>
 </html>
