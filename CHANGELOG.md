@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-18
+
+- Added a fixed training/test split to each new backtest. Strategy state carries
+  across the boundary while each period reports independent return, Sharpe, and
+  drawdown metrics, making the test period an explicit out-of-sample result.
+
 ## 2026-10-15
 
 - Added portable experiment import and side-by-side comparison for up to three

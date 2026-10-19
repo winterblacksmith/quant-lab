@@ -17,7 +17,7 @@
     <link rel="icon" href="/assets/atlas-shell/favicon.svg?v=727f2134fbea" />
     <link rel="stylesheet" href="/assets/atlas-shell/style.css?v=c8e5262a760c" />
     <script src="/assets/atlas-shell/theme.js?v=e03df0f86d0c"></script>
-    <link rel="stylesheet" href="/assets/quant/quant.css?v=412861a7e2d1" />
+    <link rel="stylesheet" href="/assets/quant/quant.css?v=1364d01bcf90" />
   </head>
   <body data-page="quant">
     <a class="skip" href="#main">Skip to content</a>
@@ -103,6 +103,13 @@
                 ><label>End date<input id="end" type="date" required /></label>
               </div>
               <label
+                >Test period starts<input id="test-start" type="date" required />
+                <span class="fine"
+                  >Choose parameters using training results only, then judge them on the untouched
+                  test period.</span
+                ></label
+              >
+              <label
                 >Starting capital · USD<input
                   id="capital"
                   type="number"
@@ -137,6 +144,31 @@
                 <span id="range" class="fine"></span>
               </div>
               <div id="metrics" class="metrics"></div>
+              <section
+                id="period-comparison"
+                class="panel period-panel"
+                aria-labelledby="period-title"
+              >
+                <div class="result-heading">
+                  <h2 id="period-title">Training vs. test</h2>
+                  <span class="fine">Test performance is the out-of-sample result</span>
+                </div>
+                <div class="table-wrap period-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Period</th>
+                        <th>Dates</th>
+                        <th>Strategy return</th>
+                        <th>B&amp;H return</th>
+                        <th>Strategy Sharpe</th>
+                        <th>Max drawdown</th>
+                      </tr>
+                    </thead>
+                    <tbody id="periods"></tbody>
+                  </table>
+                </div>
+              </section>
               <section class="panel chart-panel">
                 <div class="result-heading">
                   <h2>Portfolio value</h2>
@@ -284,10 +316,11 @@
           <details>
             <summary>What a good result does not prove</summary>
             <p>
-              Choosing parameters after inspecting results can overfit this history. This lab does
-              not perform out-of-sample validation. A single ETF and one period do not establish
-              robustness. Imported data must have a consistent daily frequency and adjustment basis.
-              Historical results do not predict future returns.
+              Choose parameters using the training period, then treat the test period as untouched
+              out-of-sample evidence. Repeatedly changing parameters after viewing the test result
+              also overfits it. A single ETF and one split do not establish robustness. Imported
+              data must have a consistent daily frequency and adjustment basis. Historical results
+              do not predict future returns.
             </p>
           </details>
         </section>
@@ -346,6 +379,6 @@
       <div class="palette-help">↑ ↓ navigate <span>↵ open</span></div>
     </dialog>
     <script src="/assets/atlas-shell/app.js?v=d10815200a08" defer></script>
-    <script type="module" src="/assets/quant/lab.js?v=7126a5c74bb7"></script>
+    <script type="module" src="/assets/quant/lab.js?v=a9112f07e6e3"></script>
   </body>
 </html>

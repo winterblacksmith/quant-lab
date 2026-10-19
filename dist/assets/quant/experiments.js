@@ -27,6 +27,6 @@ export function comparison(experiments) {
   }
   return experiments.map(experiment => {
     const restored = restoreExperiment(experiment), metrics = restored.result.strategy.metrics;
-    return {id:restored.id,ticker:restored.data.ticker,strategy:restored.result.config.strategy,start:restored.result.config.start,end:restored.result.config.end,totalReturn:metrics.totalReturn,annualizedReturn:metrics.annualizedReturn,sharpe:metrics.sharpe,maxDrawdown:metrics.maxDrawdown,volatility:metrics.volatility,finalValue:metrics.finalValue};
+    return {id:restored.id,ticker:restored.data.ticker,strategy:restored.result.config.strategy,start:restored.result.config.start,end:restored.result.config.end,testStart:restored.result.config.testStart||null,trainingReturn:restored.result.periods?.training.strategy.totalReturn??null,testReturn:restored.result.periods?.test.strategy.totalReturn??null,totalReturn:metrics.totalReturn,annualizedReturn:metrics.annualizedReturn,sharpe:metrics.sharpe,maxDrawdown:metrics.maxDrawdown,volatility:metrics.volatility,finalValue:metrics.finalValue};
   });
 }

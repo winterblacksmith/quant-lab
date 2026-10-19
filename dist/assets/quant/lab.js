@@ -7,8 +7,10 @@ const status = message => { $('#status').textContent=message; };
 function setData(next) {
   data=next; current=null; $('#results').hidden=true; $('#empty').hidden=false;
   const rows=data.rows; const min=rows[0].date,max=rows.at(-1).date;
-  for(const id of ['start','end']) { $(`#${id}`).min=min; $(`#${id}`).max=max; }
+  for(const id of ['start','end','test-start']) { $(`#${id}`).min=min; $(`#${id}`).max=max; }
   $('#start').value=rows[Math.min(253,Math.max(0,rows.length-3))].date; $('#end').value=max;
+  const first=rows.findIndex(row=>row.date>=$('#start').value),available=rows.length-first;
+  $('#test-start').value=rows[first+Math.max(3,Math.min(available-3,Math.floor(available*.7)))].date;
   $('#data-note').textContent=`${data.ticker} · ${rows.length.toLocaleString()} observations · ${min} → ${max}. ${data.source}`;
   $('#run').disabled=false;
   showFreshness(data);
@@ -33,6 +35,8 @@ function draw(result) {
   function node(tag,attrs,text){const n=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;g.append(n);}
   for(let i=0;i<5;i++){const v=lo+(hi-lo)*i/4;node('line',{x1:65,x2:775,y1:y(v),y2:y(v),class:'chart-grid'});node('text',{x:55,y:y(v)+4,'text-anchor':'end',class:'chart-label'},`${Math.round(v/1000)}k`);}
   for(const [series,cls] of [[b,'benchmark-line'],[a,'strategy-line']])node('path',{d:series.map((p,i)=>`${i?'L':'M'}${x(i).toFixed(2)},${y(p.equity).toFixed(2)}`).join(' '),class:cls});
+  const split=a.findIndex(point=>point.date===result.config.testStart);
+  if(split>=0){node('line',{x1:x(split),x2:x(split),y1:30,y2:265,class:'split-line'});node('text',{x:x(split)+6,y:44,class:'chart-label'},'TEST');}
   node('text',{x:65,y:295,class:'chart-label'},a[0].date);node('text',{x:775,y:295,'text-anchor':'end',class:'chart-label'},a.at(-1).date);
 }
 function drawDrawdown(result) {
@@ -44,6 +48,8 @@ function drawDrawdown(result) {
   function node(tag,attrs,text){const n=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;g.append(n);}
   for(let i=0;i<5;i++){const v=lo+(hi-lo)*i/4;node('line',{x1:65,x2:775,y1:y(v),y2:y(v),class:'chart-grid'});node('text',{x:55,y:y(v)+4,'text-anchor':'end',class:'chart-label'},`${(v*100).toFixed(0)}%`);}
   for(const [series,cls] of [[b,'benchmark-line'],[a,'strategy-line']])node('path',{d:series.map((p,i)=>`${i?'L':'M'}${x(i).toFixed(2)},${y(p.drawdown).toFixed(2)}`).join(' '),class:cls});
+  const split=a.findIndex(point=>point.date===result.config.testStart);
+  if(split>=0)node('line',{x1:x(split),x2:x(split),y1:30,y2:265,class:'split-line'});
   node('text',{x:65,y:295,class:'chart-label'},a[0].date);node('text',{x:775,y:295,'text-anchor':'end',class:'chart-label'},a.at(-1).date);
 }
 function render(experiment) {
@@ -55,9 +61,13 @@ function render(experiment) {
   $('#metrics').replaceChildren();
   const defs=[['Total return','totalReturn',pct,'Change in portfolio value after modeled costs.'],['Annualized return','annualizedReturn',pct,'Geometric return scaled to 252 trading observations.'],['Sharpe ratio','sharpe',v=>v===null?'N/A':v.toFixed(2),'Daily mean / daily sample deviation × √252; zero risk-free rate.'],['Max drawdown','maxDrawdown',pct,'Largest decline from a prior peak, including starting capital.'],['Volatility','volatility',pct,'Daily sample standard deviation × √252.']];
   for(const [label,key,format,help] of defs){const box=el('div','','metric');box.title=help;box.tabIndex=0;box.setAttribute('aria-label',`${label}: ${format(s[key])}. ${help}`);box.append(el('span',label),el('strong',format(s[key])),el('p',`B&H ${format(b[key])}`));$('#metrics').append(box);}
+  $('#period-comparison').hidden=!r.periods;
+  $('#periods').replaceChildren();
+  if(r.periods)for(const [key,label] of [['training','Training'],['test','Test']]){const period=r.periods[key],tr=el('tr','',key==='test'?'test-row':'');for(const value of [label,`${period.start} → ${period.end}`,pct(period.strategy.totalReturn),pct(period.benchmark.totalReturn),period.strategy.sharpe===null?'N/A':period.strategy.sharpe.toFixed(2),pct(period.strategy.maxDrawdown)])tr.append(el('td',value));$('#periods').append(tr);}
   draw(r);
   drawDrawdown(r);
-  $('#interpretation').textContent=`Final value ${money(s.finalValue)} vs. ${money(b.finalValue)} for buy and hold. Strategy costs: ${money(r.strategy.costs)}. Difference: ${((s.totalReturn-b.totalReturn)*100).toFixed(2)} percentage points. This is an in-sample historical result.`;
+  const testSummary=r.periods?` Out-of-sample test return: ${pct(r.periods.test.strategy.totalReturn)} vs. ${pct(r.periods.test.benchmark.totalReturn)} for buy and hold.`:'';
+  $('#interpretation').textContent=`Final value ${money(s.finalValue)} vs. ${money(b.finalValue)} for buy and hold. Strategy costs: ${money(r.strategy.costs)}. Full-period difference: ${((s.totalReturn-b.totalReturn)*100).toFixed(2)} percentage points.${testSummary}`;
   $('#trade-count').textContent=`${r.strategy.trades.length} executions`;
   $('#trades').replaceChildren();
   for(const t of r.strategy.trades){const tr=el('tr','');for(const v of [t.date,t.side,t.price.toFixed(2),t.shares.toFixed(4),t.cost.toFixed(2)])tr.append(el('td',v));$('#trades').append(tr);}
@@ -66,7 +76,7 @@ function render(experiment) {
 $('#backtest-form').addEventListener('submit',event=>{
   event.preventDefault();try {
     if(!data)throw new Error('Load a dataset first.');
-    const config={strategy:$('#strategy').value,start:$('#start').value,end:$('#end').value,capital:Number($('#capital').value),lookback:Number($('#lookback').value),feeBps:Number($('#fee').value)};
+    const config={strategy:$('#strategy').value,start:$('#start').value,end:$('#end').value,testStart:$('#test-start').value,capital:Number($('#capital').value),lookback:Number($('#lookback').value),feeBps:Number($('#fee').value)};
     const result=backtest(data.rows,config);
     render({id:crypto.randomUUID(),created:new Date().toISOString(),data:{...data,ticker:$('#dataset').value==='csv'?($('#ticker').value.trim()||'CUSTOM'):data.ticker},result});
     status('Backtest complete. Results reflect the settings at the time of this run.');
@@ -92,7 +102,7 @@ function download(content,type,name){const url=URL.createObjectURL(new Blob([con
 $('#export').addEventListener('click',()=>{if(current)download(JSON.stringify(current,null,2),'application/json',`orion-${current.id}.json`);});
 $('#export-csv').addEventListener('click',()=>{if(!current)return;const r=current.result;const csv=['date,strategy_equity,benchmark_equity,cash,units',...r.strategy.curve.map((p,i)=>[p.date,p.equity,r.benchmark.curve[i].equity,p.cash,p.shares].join(','))].join('\n');download(csv,'text/csv',`orion-equity-${current.id}.csv`);});
 function saved(){const value=JSON.parse(localStorage.getItem(key)||'[]');if(!Array.isArray(value))throw new Error('Invalid archive');return value.map(restoreExperiment);}
-function showComparison(runs){const selected=[...document.querySelectorAll('[data-compare]:checked')].map(input=>runs.find(run=>run.id===input.value)).filter(Boolean),section=$('#comparison');if(selected.length<2){section.hidden=true;return;}try{const compared=comparison(selected);section.hidden=false;$('#comparison-head').replaceChildren(el('th','Metric'));for(const run of compared)$('#comparison-head').append(el('th',`${run.ticker} · ${run.strategy}`));const metrics=[['Period',run=>`${run.start} → ${run.end}`],['Total return',run=>pct(run.totalReturn)],['Annualized return',run=>pct(run.annualizedReturn)],['Sharpe',run=>run.sharpe===null?'N/A':run.sharpe.toFixed(2)],['Max drawdown',run=>pct(run.maxDrawdown)],['Volatility',run=>pct(run.volatility)],['Final value',run=>money(run.finalValue)]];$('#comparison-body').replaceChildren();for(const [label,format] of metrics){const tr=el('tr','');tr.append(el('th',label));for(const run of compared)tr.append(el('td',format(run)));$('#comparison-body').append(tr);}}catch(error){section.hidden=true;status(error.message);}}
+function showComparison(runs){const selected=[...document.querySelectorAll('[data-compare]:checked')].map(input=>runs.find(run=>run.id===input.value)).filter(Boolean),section=$('#comparison');if(selected.length<2){section.hidden=true;return;}try{const compared=comparison(selected);section.hidden=false;$('#comparison-head').replaceChildren(el('th','Metric'));for(const run of compared)$('#comparison-head').append(el('th',`${run.ticker} · ${run.strategy}`));const metrics=[['Period',run=>`${run.start} → ${run.end}`],['Test starts',run=>run.testStart||'Not split'],['Training return',run=>run.trainingReturn===null?'N/A':pct(run.trainingReturn)],['Test return',run=>run.testReturn===null?'N/A':pct(run.testReturn)],['Full-period return',run=>pct(run.totalReturn)],['Annualized return',run=>pct(run.annualizedReturn)],['Sharpe',run=>run.sharpe===null?'N/A':run.sharpe.toFixed(2)],['Max drawdown',run=>pct(run.maxDrawdown)],['Volatility',run=>pct(run.volatility)],['Final value',run=>money(run.finalValue)]];$('#comparison-body').replaceChildren();for(const [label,format] of metrics){const tr=el('tr','');tr.append(el('th',label));for(const run of compared)tr.append(el('td',format(run)));$('#comparison-body').append(tr);}}catch(error){section.hidden=true;status(error.message);}}
 function archive(){try{const runs=saved();$('#saved').replaceChildren();if(!runs.length)$('#saved').append(el('p','No saved experiments yet. Run a backtest, save it, or import an exported JSON file.','fine'));for(const e of runs){const row=el('div','','saved-row'),label=el('label','','compare-choice'),compare=document.createElement('input');compare.type='checkbox';compare.value=e.id;compare.dataset.compare='';compare.setAttribute('aria-label',`Compare ${e.data.ticker} ${e.result.config.strategy} run`);compare.addEventListener('change',()=>{const checked=document.querySelectorAll('[data-compare]:checked');if(checked.length>3){compare.checked=false;status('Compare up to three experiments at a time.');}showComparison(runs);});label.append(compare,el('span',`${e.data.ticker} · ${e.result.config.strategy} · ${e.result.config.start} → ${e.result.config.end}`));row.append(label);const open=el('button','Load run');open.addEventListener('click',()=>{render(e);status('Saved run restored. Form settings apply to your next run.');$('#results').scrollIntoView({block:'start'});});row.append(open);$('#saved').append(row);}showComparison(runs);}catch{$('#saved').textContent='Browser storage is unavailable or damaged. Use JSON export to retain your experiments.';$('#comparison').hidden=true;}}
 $('#save').addEventListener('click',()=>{if(!current)return;try{const runs=saved().filter(e=>e.id!==current.id);localStorage.setItem(key,JSON.stringify([current,...runs].slice(0,10)));archive();status('Experiment saved in this browser.');}catch{status('Could not save to browser storage. Export JSON to keep this experiment.');}});
 $('#import-experiment').addEventListener('change',async()=>{try{const file=$('#import-experiment').files[0];if(!file)return;if(file.size>MAX_IMPORTED_BYTES)throw new Error('Choose an experiment JSON file smaller than 5 MB.');const imported=restoreExperiment(JSON.parse(await file.text())),runs=saved().filter(run=>run.id!==imported.id);localStorage.setItem(key,JSON.stringify([imported,...runs].slice(0,10)));archive();render(imported);status(`Imported and verified ${file.name}. Results were recomputed from its saved data.`);$('#results').scrollIntoView({block:'start'});}catch(error){status(`Could not import experiment: ${error.message}`);}finally{$('#import-experiment').value='';}});

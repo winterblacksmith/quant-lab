@@ -1,7 +1,7 @@
 # Orion Quant Lab backlog
 
 ## Next
-- Add train/test separation before any parameter search.
+- Add walk-forward validation before any parameter search.
 
 ## Later
 - Additional strategies and Strategy Arena using the priorities and readiness rules in
@@ -12,6 +12,8 @@
 - Add a second asset only after its data quality and adjustment basis are documented.
 
 ## Completed
+- Fixed train/test separation with continuous portfolio state, independent period
+  metrics, and an explicit out-of-sample test result.
 - `/quant/` landing page and `/quant/lab/` research workspace.
 - Historical SPY snapshot, CSV import, configurable momentum and buy-and-hold.
 - Moving-average trend filter with delayed signals, the same fees and benchmark,

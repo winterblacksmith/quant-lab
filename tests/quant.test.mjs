@@ -14,6 +14,21 @@ test('sample volatility matches independently calculated daily returns',()=>{con
 test('annualized return uses geometric growth over trading observations',()=>{const m=metrics([{equity:101},{equity:102.01}],100);assert.ok(Math.abs(m.annualizedReturn-(1.0201**126-1))<1e-10);});
 test('drawdowns track declines from starting capital and recovered peaks',()=>{const points=drawdowns([{date:'a',equity:90},{date:'b',equity:120},{date:'c',equity:96},{date:'d',equity:132}],100);assert.deepEqual(points.map(p=>p.date),['a','b','c','d']);assert.ok(Math.abs(points[0].drawdown+.1)<1e-12);assert.equal(points[1].drawdown,0);assert.ok(Math.abs(points[2].drawdown+.2)<1e-12);assert.equal(points[3].drawdown,0);});
 
+test('train and test metrics use the prior period value as the test baseline',()=>{
+  const result=backtest(rows([100,100,100,120,90,99,108,117]),{...config,strategy:'hold',end:'2024-01-08',testStart:'2024-01-06'});
+  assert.deepEqual([result.periods.training.start,result.periods.training.end],['2024-01-03','2024-01-05']);
+  assert.deepEqual([result.periods.test.start,result.periods.test.end],['2024-01-06','2024-01-08']);
+  assert.ok(Math.abs(result.periods.training.strategy.totalReturn+.1)<1e-12);
+  assert.ok(Math.abs(result.periods.test.strategy.totalReturn-.3)<1e-12);
+  assert.deepEqual(result.periods.training.strategy,result.periods.training.benchmark);
+});
+
+test('train and test split requires exact dates and three observations per period',()=>{
+  const base={...config,end:'2024-01-08'};
+  const data=rows([1,2,3,4,5,6,7,8]);
+  for(const testStart of ['2024-01-04','2024-01-07','2024-01-06T00:00:00Z','2024-02-01'])assert.throws(()=>backtest(data,{...base,testStart}),/at least three observations/);
+});
+
 test('moving-average filter uses only prior closes and holds cash at equality',()=>{
   const settings={...config,strategy:'sma',lookback:2,start:'2024-01-04',end:'2024-01-08'};
   const result=backtest(rows([10,10,12,11,9,12,13,8]),settings);

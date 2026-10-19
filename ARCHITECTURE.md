@@ -35,6 +35,15 @@ rate; undefined when deviation is zero. Drawdown includes starting capital as
 an initial high-water mark. Annualization assumes daily trading observations;
 import validation cannot independently verify a provider's trading calendar.
 
+Each new experiment has a fixed training/test split with at least three observations
+on each side. The strategy runs continuously across the boundary so an existing
+position and its transaction history are not reset. Training metrics use starting
+capital as their baseline; test metrics use the portfolio value immediately before
+the first test observation. The split is descriptive rather than an automated
+optimizer: researchers choose parameters from training evidence and reserve the
+test result for out-of-sample evaluation. Older exported experiments without a
+split remain importable and display their original full-period result.
+
 The moving-average filter owns the asset when the close at `t-1` is strictly
 greater than the arithmetic average of closes `t-lookback` through `t-1`.
 Equality means cash. It uses the same delayed execution, long-or-cash sizing,

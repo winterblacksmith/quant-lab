@@ -1,4 +1,4 @@
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 export function validateRows(rows) {
   if (!Array.isArray(rows) || rows.length < 3 || rows.length > 20000) throw new Error('Provide 3–20,000 daily observations.');
   rows.forEach((r, i) => {
@@ -30,6 +30,11 @@ export function metrics(curve, capital) {
   const annualizedReturn = (prev / capital) ** (252 / returns.length) - 1;
   const maxDrawdown = Math.min(0, ...drawdowns(curve, capital).map(point => point.drawdown));
   return {totalReturn:prev/capital-1, annualizedReturn, volatility:sd*Math.sqrt(252), sharpe:sd > 1e-12 ? mean/sd*Math.sqrt(252) : null, maxDrawdown, finalValue:prev};
+}
+function periodMetrics(simulation, startIndex, endIndex, capital) {
+  const curve = simulation.curve.slice(startIndex, endIndex);
+  const openingValue = startIndex ? simulation.curve[startIndex - 1].equity : capital;
+  return metrics(curve, openingValue);
 }
 export function backtest(rows, config) {
   validateRows(rows);
@@ -70,5 +75,15 @@ export function backtest(rows, config) {
     });
     return {curve,trades,costs,metrics:metrics(curve,capital)};
   }
-  return {version:VERSION,config:{...config},strategy:simulate(strategy),benchmark:simulate('hold')};
+  const strategyResult=simulate(strategy),benchmark=simulate('hold');
+  let periods=null;
+  if (config.testStart !== undefined) {
+    const split=selected.findIndex(row=>row.date>=config.testStart);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(config.testStart) || split < 3 || selected.length-split < 3 || selected[split].date !== config.testStart) throw new Error('Choose a test start with at least three observations in both training and test periods.');
+    periods={
+      training:{start:selected[0].date,end:selected[split-1].date,strategy:periodMetrics(strategyResult,0,split,capital),benchmark:periodMetrics(benchmark,0,split,capital)},
+      test:{start:selected[split].date,end:selected.at(-1).date,strategy:periodMetrics(strategyResult,split,selected.length,capital),benchmark:periodMetrics(benchmark,split,selected.length,capital)}
+    };
+  }
+  return {version:VERSION,config:{...config},strategy:strategyResult,benchmark,periods};
 }
