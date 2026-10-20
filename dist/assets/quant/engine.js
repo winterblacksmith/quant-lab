@@ -1,4 +1,4 @@
-export const VERSION = '1.3.0';
+export const VERSION = '1.4.0';
 export function validateRows(rows) {
   if (!Array.isArray(rows) || rows.length < 3 || rows.length > 20000) throw new Error('Provide 3–20,000 daily observations.');
   rows.forEach((r, i) => {
@@ -38,6 +38,13 @@ function periodMetrics(simulation, startIndex, endIndex, capital) {
 }
 export function backtest(rows, config) {
   validateRows(rows);
+  if (config.parameterLookbacks !== undefined) {
+    const parameterComparison=compareParameters(rows,config,config.parameterLookbacks);
+    const result=backtest(rows,{...config,lookback:parameterComparison.selectedLookback,parameterLookbacks:undefined});
+    result.config.parameterLookbacks=[...config.parameterLookbacks];
+    result.parameterComparison=parameterComparison;
+    return result;
+  }
   const {start,end,capital,lookback,feeBps,strategy} = config;
   if (!['momentum','sma','hold'].includes(strategy) || !Number.isFinite(capital) || capital <= 0 || capital > 1e9 || !Number.isInteger(lookback) || lookback < (strategy === 'sma' ? 2 : 1) || lookback > 252 || !Number.isFinite(feeBps) || feeBps < 0 || feeBps > 100) throw new Error('Check capital, lookback (2–252 for moving average), and costs (0–100 bps).');
   if (![start,end].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d) && Number.isFinite(Date.parse(d)) && new Date(d).toISOString().slice(0,10) === d) || start > end || start < rows[0].date || end > rows.at(-1).date) throw new Error('Choose a valid date range within this dataset.');
@@ -85,9 +92,29 @@ export function backtest(rows, config) {
       test:{start:selected[split].date,end:selected.at(-1).date,strategy:periodMetrics(strategyResult,split,selected.length,capital),benchmark:periodMetrics(benchmark,split,selected.length,capital)}
     };
   }
-  const result={version:VERSION,config:{...config},strategy:strategyResult,benchmark,periods};
+  const result={version:VERSION,config:{...config},strategy:strategyResult,benchmark,periods,parameterComparison:null};
   result.walkForward=config.walkForwardWindow===undefined?null:walkForward(rows,config,config.walkForwardWindow);
   return result;
+}
+
+export function compareParameters(rows, config, candidates) {
+  validateRows(rows);
+  if (!config.testStart) throw new Error('Parameter comparison requires a training/test split.');
+  if (config.strategy === 'hold') throw new Error('Buy and hold has no lookback parameter to compare.');
+  if (!Array.isArray(candidates) || candidates.length < 2 || candidates.length > 12 ||
+      candidates.some(value=>!Number.isInteger(value) || value < (config.strategy === 'sma' ? 2 : 1) || value > 252) ||
+      new Set(candidates).size !== candidates.length) {
+    throw new Error('Compare 2–12 unique valid lookbacks (1–252; moving average starts at 2).');
+  }
+  const selected=rows.filter(row=>row.date>=config.start&&row.date<=config.end);
+  const split=selected.findIndex(row=>row.date===config.testStart);
+  if (split < 3) throw new Error('Parameter comparison needs a valid test start after at least three training observations.');
+  const trainingEnd=selected[split-1].date;
+  const results=candidates.map(lookback=>{
+    const run=backtest(rows,{...config,end:trainingEnd,lookback,testStart:undefined,walkForwardWindow:undefined,parameterLookbacks:undefined});
+    return {lookback,totalReturn:run.strategy.metrics.totalReturn,sharpe:run.strategy.metrics.sharpe,maxDrawdown:run.strategy.metrics.maxDrawdown,trades:run.strategy.trades.length};
+  }).sort((a,b)=>b.totalReturn-a.totalReturn||a.lookback-b.lookback);
+  return {objective:'trainingTotalReturn',trainingStart:config.start,trainingEnd,configurationsTried:results.length,selectedLookback:results[0].lookback,results};
 }
 
 export function walkForward(rows, config, testWindow) {

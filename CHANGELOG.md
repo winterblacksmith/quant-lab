@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-20
+
+- Added guarded lookback comparison for 2–12 candidate configurations. Candidates are
+  ranked only by training return, the search breadth is disclosed, and test results are
+  excluded from selection.
+
 ## 2026-10-19
 
 - Added optional expanding walk-forward validation. It evaluates a fixed strategy

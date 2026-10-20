@@ -98,6 +98,17 @@
                   value="30"
                   required
               /></label>
+              <label class="check-field"
+                ><input id="compare-parameters" type="checkbox" />
+                <span>Choose a lookback from training data</span></label
+              >
+              <label id="parameter-candidates-field" hidden
+                >Candidate lookbacks<input id="parameter-candidates" value="10, 20, 30, 60" />
+                <span class="fine"
+                  >Enter 2–12 unique trading-day values. Training return ranks them; test results
+                  stay out of selection.</span
+                ></label
+              >
               <div class="field-pair">
                 <label>Start date<input id="start" type="date" required /></label
                 ><label>End date<input id="end" type="date" required /></label>
@@ -163,6 +174,33 @@
                 <span id="range" class="fine"></span>
               </div>
               <div id="metrics" class="metrics"></div>
+              <section
+                id="parameter-results"
+                class="panel period-panel"
+                aria-labelledby="parameter-title"
+                hidden
+              >
+                <div class="result-heading">
+                  <h2 id="parameter-title">Training-only parameter comparison</h2>
+                  <span class="fine">Test results were not used for ranking</span>
+                </div>
+                <p id="parameter-summary" class="fine"></p>
+                <div class="table-wrap period-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Rank</th>
+                        <th>Lookback</th>
+                        <th>Training return</th>
+                        <th>Training Sharpe</th>
+                        <th>Max drawdown</th>
+                        <th>Trades</th>
+                      </tr>
+                    </thead>
+                    <tbody id="parameter-ranking"></tbody>
+                  </table>
+                </div>
+              </section>
               <section
                 id="period-comparison"
                 class="panel period-panel"
@@ -365,10 +403,11 @@
             <p>
               Choose parameters using the training period, then treat the test period as untouched
               out-of-sample evidence. Repeatedly changing parameters after viewing the test result
-              also overfits it. Expanding walk-forward validation repeats that evaluation across
-              consecutive, non-overlapping test windows and compounds only their test returns; it
-              does not tune parameters automatically. A single ETF and a small number of folds do
-              not establish robustness. Imported data must have a consistent daily frequency and
+              also overfits it. The optional comparison ranks a disclosed set of lookbacks using
+              training return only before evaluating the winner on the test period. Expanding
+              walk-forward validation repeats evaluation across consecutive, non-overlapping test
+              windows and compounds only their test returns. A single ETF and a small search do not
+              establish robustness. Imported data must have a consistent daily frequency and
               adjustment basis. Historical results do not predict future returns.
             </p>
           </details>
@@ -428,6 +467,6 @@
       <div class="palette-help">↑ ↓ navigate <span>↵ open</span></div>
     </dialog>
     <script src="/assets/atlas-shell/app.js?v=d10815200a08" defer></script>
-    <script type="module" src="/assets/quant/lab.js?v=42dcfcbdfbef"></script>
+    <script type="module" src="/assets/quant/lab.js?v=832cb23586f7"></script>
   </body>
 </html>

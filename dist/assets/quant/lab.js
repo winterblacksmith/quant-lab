@@ -1,4 +1,4 @@
-import {backtest, drawdowns, parseCSV, validateRows} from './engine.js?v=d2130638506f';
+import {backtest, drawdowns, parseCSV, validateRows} from './engine.js?v=0af2ad6b8825';
 import {comparison, MAX_IMPORTED_BYTES, restoreExperiment} from './experiments.js?v=d508b0bb21db';
 const $ = s => document.querySelector(s), money = n => n.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}), pct = n => `${(n*100).toFixed(2)}%`;
 let bundled, data, current;
@@ -61,6 +61,9 @@ function render(experiment) {
   $('#metrics').replaceChildren();
   const defs=[['Total return','totalReturn',pct,'Change in portfolio value after modeled costs.'],['Annualized return','annualizedReturn',pct,'Geometric return scaled to 252 trading observations.'],['Sharpe ratio','sharpe',v=>v===null?'N/A':v.toFixed(2),'Daily mean / daily sample deviation × √252; zero risk-free rate.'],['Max drawdown','maxDrawdown',pct,'Largest decline from a prior peak, including starting capital.'],['Volatility','volatility',pct,'Daily sample standard deviation × √252.']];
   for(const [label,key,format,help] of defs){const box=el('div','','metric');box.title=help;box.tabIndex=0;box.setAttribute('aria-label',`${label}: ${format(s[key])}. ${help}`);box.append(el('span',label),el('strong',format(s[key])),el('p',`B&H ${format(b[key])}`));$('#metrics').append(box);}
+  $('#parameter-results').hidden=!r.parameterComparison;
+  $('#parameter-ranking').replaceChildren();
+  if(r.parameterComparison){const p=r.parameterComparison;$('#parameter-summary').textContent=`Compared ${p.configurationsTried} configurations on ${p.trainingStart} → ${p.trainingEnd}. Lookback ${p.selectedLookback} ranked first by training return and was then evaluated on the untouched test period.`;p.results.forEach((candidate,index)=>{const tr=el('tr','',index===0?'test-row':'');for(const value of [index+1,candidate.lookback,pct(candidate.totalReturn),candidate.sharpe===null?'N/A':candidate.sharpe.toFixed(2),pct(candidate.maxDrawdown),candidate.trades])tr.append(el('td',value));$('#parameter-ranking').append(tr);});}
   $('#period-comparison').hidden=!r.periods;
   $('#periods').replaceChildren();
   if(r.periods)for(const [key,label] of [['training','Training'],['test','Test']]){const period=r.periods[key],tr=el('tr','',key==='test'?'test-row':'');for(const value of [label,`${period.start} → ${period.end}`,pct(period.strategy.totalReturn),pct(period.benchmark.totalReturn),period.strategy.sharpe===null?'N/A':period.strategy.sharpe.toFixed(2),pct(period.strategy.maxDrawdown)])tr.append(el('td',value));$('#periods').append(tr);}
@@ -80,16 +83,24 @@ $('#backtest-form').addEventListener('submit',event=>{
   event.preventDefault();try {
     if(!data)throw new Error('Load a dataset first.');
     const config={strategy:$('#strategy').value,start:$('#start').value,end:$('#end').value,testStart:$('#test-start').value,capital:Number($('#capital').value),lookback:Number($('#lookback').value),feeBps:Number($('#fee').value)};
+    if($('#compare-parameters').checked)config.parameterLookbacks=$('#parameter-candidates').value.split(',').map(value=>Number(value.trim()));
     if($('#walk-forward').checked)config.walkForwardWindow=Number($('#walk-forward-window').value);
     const result=backtest(data.rows,config);
     render({id:crypto.randomUUID(),created:new Date().toISOString(),data:{...data,ticker:$('#dataset').value==='csv'?($('#ticker').value.trim()||'CUSTOM'):data.ticker},result});
-    status('Backtest complete. Results reflect the settings at the time of this run.');
+    status(result.parameterComparison?`Backtest complete. Compared ${result.parameterComparison.configurationsTried} training configurations and selected lookback ${result.config.lookback}.`:'Backtest complete. Results reflect the settings at the time of this run.');
   }catch(error){status(error.message);}
 });
 $('#walk-forward').addEventListener('change',()=>{$('#walk-forward-window').disabled=!$('#walk-forward').checked;});
+$('#compare-parameters').addEventListener('change',()=>{
+  $('#parameter-candidates-field').hidden=!$('#compare-parameters').checked;
+  $('#lookback').disabled=$('#compare-parameters').checked||$('#strategy').value==='hold';
+});
 $('#strategy').addEventListener('change',()=>{
   const strategy=$('#strategy').value;
-  $('#lookback').disabled=strategy==='hold';
+  if(strategy==='hold')$('#compare-parameters').checked=false;
+  $('#compare-parameters').disabled=strategy==='hold';
+  $('#parameter-candidates-field').hidden=!$('#compare-parameters').checked;
+  $('#lookback').disabled=strategy==='hold'||$('#compare-parameters').checked;
   $('#lookback').min=strategy==='sma'?'2':'1';
   if(strategy==='sma' && Number($('#lookback').value)<2)$('#lookback').value='2';
   $('#rule').textContent={

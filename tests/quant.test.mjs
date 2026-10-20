@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {backtest,drawdowns,parseCSV,metrics,walkForward} from '../dist/assets/quant/engine.js';
+import {backtest,compareParameters,drawdowns,parseCSV,metrics,walkForward} from '../dist/assets/quant/engine.js';
 const rows=prices=>prices.map((close,i)=>({date:`2024-01-${String(i+1).padStart(2,'0')}`,close}));
 const config={start:'2024-01-03',end:'2024-01-06',capital:100,lookback:1,feeBps:0,strategy:'momentum'};
 test('hold matches hand-calculated equity and benchmark',()=>{const r=backtest(rows([100,100,100,120,90,110]),{...config,strategy:'hold'});assert.equal(r.strategy.metrics.finalValue,110);assert.deepEqual(r.strategy,r.benchmark);assert.ok(Math.abs(r.strategy.metrics.maxDrawdown+.25)<1e-12);});
@@ -73,4 +73,28 @@ test('walk-forward rejects unusable windows and preserves earlier fold results',
   assert.deepEqual(walkForward(original,settings,3).folds[0],walkForward(changed,settings,3).folds[0]);
   assert.throws(()=>walkForward(original,settings,2),/3–252/);
   assert.throws(()=>walkForward(original,{...settings,testStart:'2024-01-10'},3),/at least two/);
+});
+
+test('parameter comparison ranks lookbacks using training returns only',()=>{
+  const settings={...config,start:'2024-01-05',end:'2024-01-12',testStart:'2024-01-09'};
+  const original=rows([10,11,12,13,9,8,12,14,16,18,20,22]);
+  const changed=rows([10,11,12,13,9,8,12,14,1600,1,2000,1]);
+  const first=compareParameters(original,settings,[1,2,3]);
+  const second=compareParameters(changed,settings,[1,2,3]);
+  assert.deepEqual(first,second);
+  assert.equal(first.configurationsTried,3);
+  assert.equal(first.results[0].lookback,first.selectedLookback);
+  assert.deepEqual([...first.results].sort((a,b)=>b.totalReturn-a.totalReturn||a.lookback-b.lookback),first.results);
+});
+
+test('parameter comparison validates candidates and drives the full test config',()=>{
+  const data=rows([10,11,12,13,9,8,12,14,16,18,20,22]);
+  const settings={...config,start:'2024-01-05',end:'2024-01-12',testStart:'2024-01-09'};
+  for(const candidates of [[1],[1,1],Array.from({length:13},(_,i)=>i+1),[0,2]])assert.throws(()=>compareParameters(data,settings,candidates),/2–12/);
+  assert.throws(()=>compareParameters(data,{...settings,strategy:'hold'},[1,2]),/no lookback/);
+  assert.throws(()=>compareParameters(data,{...settings,strategy:'sma'},[1,2]),/2–12/);
+  const result=backtest(data,{...settings,parameterLookbacks:[1,2,3]});
+  assert.equal(result.config.lookback,result.parameterComparison.selectedLookback);
+  assert.deepEqual(result.config.parameterLookbacks,[1,2,3]);
+  assert.ok(result.periods.test);
 });
