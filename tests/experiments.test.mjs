@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {comparison, restoreExperiment} from '../dist/assets/quant/experiments.js';
+
+const rows = [100,110,105,120,115,130].map((close,index)=>({date:`2024-01-${String(index+1).padStart(2,'0')}`,close}));
+const exported = {id:'experiment-1',created:'2024-02-01T12:00:00.000Z',data:{ticker:'TEST',source:'fixture',rows},result:{config:{strategy:'hold',start:'2024-01-03',end:'2024-01-06',capital:100,lookback:1,feeBps:0},strategy:{metrics:{finalValue:999999}}}};
+
+test('restored experiments recompute results instead of trusting exported metrics',()=>{const restored=restoreExperiment(exported);assert.ok(Math.abs(restored.result.strategy.metrics.finalValue-100*130/105)<1e-12);assert.notEqual(restored.result.strategy.metrics.finalValue,exported.result.strategy.metrics.finalValue);});
+test('experiment imports reject malformed identity, data, and settings',()=>{assert.throws(()=>restoreExperiment(null),/one exported experiment/);assert.throws(()=>restoreExperiment({...exported,created:'not-a-date'}),/identifier or creation date/);assert.throws(()=>restoreExperiment({...exported,data:{...exported.data,rows:[]}}),/observations/);assert.throws(()=>restoreExperiment({...exported,result:{}}),/settings/);});
+test('comparison returns consistent strategy metrics for two or three restored runs',()=>{const second={...exported,id:'experiment-2',result:{...exported.result,config:{...exported.result.config,strategy:'momentum'}}};const compared=comparison([exported,second]);assert.deepEqual(compared.map(row=>row.id),['experiment-1','experiment-2']);assert.equal(compared[0].strategy,'hold');assert.equal(compared[1].strategy,'momentum');assert.throws(()=>comparison([exported]),/two or three/);assert.throws(()=>comparison([exported,second,exported,second]),/two or three/);});
+test('comparison exposes split returns while keeping older runs compatible',()=>{const split={...exported,id:'experiment-split',result:{...exported.result,config:{...exported.result.config,start:'2024-01-01',testStart:'2024-01-04'}}};const [oldRun,newRun]=comparison([exported,split]);assert.equal(oldRun.testReturn,null);assert.equal(newRun.testStart,'2024-01-04');assert.ok(Number.isFinite(newRun.trainingReturn));assert.ok(Number.isFinite(newRun.testReturn));});

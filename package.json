@@ -1,11 +1,11 @@
 {
   "name": "orion-quant-lab",
-  "version": "1.1.0",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "python3 -m http.server 4174 --bind 127.0.0.1 --directory dist",
-    "check": "node --check dist/assets/quant/engine.js && node --check dist/assets/quant/lab.js && node --check dist/assets/quant/options-engine.js && node --check dist/assets/quant/options.js && node --check dist/assets/atlas-shell/app.js && python3 scripts/check.py && npm test",
+    "check": "node --check dist/assets/quant/engine.js && node --check dist/assets/quant/experiments.js && node --check dist/assets/quant/lab.js && node --check dist/assets/quant/options-engine.js && node --check dist/assets/quant/options.js && node --check dist/assets/atlas-shell/app.js && python3 scripts/check.py && npm test",
     "test": "node --test tests/*.test.mjs && python3 -m unittest discover -s tests -p \"test_*.py\"",
     "refresh:data": "python3 scripts/refresh-market-data.py",
     "format:html": "npx --yes prettier@3.6.2 --write \"dist/**/*.html\""

@@ -35,6 +35,36 @@ rate; undefined when deviation is zero. Drawdown includes starting capital as
 an initial high-water mark. Annualization assumes daily trading observations;
 import validation cannot independently verify a provider's trading calendar.
 
+Each new experiment has a fixed training/test split with at least three observations
+on each side. The strategy runs continuously across the boundary so an existing
+position and its transaction history are not reset. Training metrics use starting
+capital as their baseline; test metrics use the portfolio value immediately before
+the first test observation. The split is descriptive rather than an automated
+optimizer: researchers choose parameters from training evidence and reserve the
+test result for out-of-sample evaluation. Older exported experiments without a
+split remain importable and display their original full-period result.
+
+Optional expanding walk-forward validation begins at that same test boundary. Each
+fold trains from the selected start through the prior fold, then evaluates the next
+non-overlapping 3–252-observation test window. A final short remainder is included
+in the preceding fold; fewer than two folds is rejected. Strategy state is continuous
+across the training/test boundary within each fold, but each fold is independently
+initialized to avoid carrying capital between repeated simulations. Aggregate
+strategy and benchmark returns compound only the disjoint out-of-sample windows.
+The validator applies one fixed configuration and does not search or rank parameters.
+
+Optional guarded parameter comparison accepts 2–12 unique lookbacks and ranks them by
+training-period total return, with the shorter lookback breaking exact ties. The selected
+lookback is then used for the full continuous run, whose test metrics remain out of the
+ranking. The result records every candidate's training return, Sharpe, drawdown, and trade
+count plus the number of configurations tried so the search breadth is visible.
+
+Optional transaction-cost sensitivity accepts 2–6 unique assumptions from 0–100 basis
+points and reruns one fixed strategy, lookback, date range, and capital setting at each
+cost. Scenarios are ordered by cost rather than performance and report full-period and
+test returns, benchmark return, modeled costs, final value, and unchanged trade count.
+It is a robustness view, not a parameter selector.
+
 The moving-average filter owns the asset when the close at `t-1` is strictly
 greater than the arithmetic average of closes `t-lookback` through `t-1`.
 Equality means cash. It uses the same delayed execution, long-or-cash sizing,
@@ -64,6 +94,9 @@ Each saved run records engine version, config,
 source metadata, all input rows, results and timestamp. Exports survive browser
 storage clearing. Local storage is limited to the latest 10 experiments. There
 is no account, cloud sync, live quote feed, or claim of predictive performance.
+Imported experiment JSON is schema-checked and its results are recomputed from the
+embedded rows and configuration before storage or comparison; exported metrics are
+not trusted as authoritative.
 
 ## Daily data refresh
 

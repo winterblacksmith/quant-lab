@@ -20,7 +20,7 @@
     <link rel="icon" href="/assets/atlas-shell/favicon.svg?v=727f2134fbea" />
     <link rel="stylesheet" href="/assets/atlas-shell/style.css?v=c8e5262a760c" />
     <script src="/assets/atlas-shell/theme.js?v=e03df0f86d0c"></script>
-    <link rel="stylesheet" href="/assets/quant/quant.css?v=2490f239bf4d" />
+    <link rel="stylesheet" href="/assets/quant/quant.css?v=6e0be4bd43ef" />
     <link rel="stylesheet" href="/assets/quant/exhibit.css?v=9053b4fd42ad" />
   </head>
   <body data-page="quant">
@@ -368,8 +368,9 @@
               <span>A RESEARCHER’S CAUTION</span>
               <p>
                 Trying many settings and keeping only the winner can fit the quirks of the past.
-                This is called <strong>overfitting</strong>. The lab does not yet test your idea on
-                a separate, unseen period. Use a good result as a reason to ask more questions.
+                This is called <strong>overfitting</strong>. The lab can rank a small, disclosed set
+                of lookbacks on training data, then report performance on a separate, untouched test
+                period. Use a good result as a reason to ask more questions.
               </p>
             </aside>
           </div>
@@ -474,12 +475,12 @@
                 <span class="exhibit-kicker">PLANNED RESEARCH</span>
                 <h3>Stronger tests and broader models</h3>
                 <ul>
-                  <li>Import saved experiments and compare runs side by side.</li>
                   <li>
-                    Train/test separation, then walk-forward validation and checks for parameter
-                    overfitting.
+                    Training-only parameter comparison, fixed train/test separation, and expanding
+                    walk-forward validation.
                   </li>
-                  <li>A separate slippage model and sensitivity analysis for trading costs.</li>
+                  <li>Transaction-cost sensitivity across disclosed fixed assumptions.</li>
+                  <li>A separate slippage model distinct from proportional transaction costs.</li>
                   <li>
                     Only after the validation foundation: factor research, portfolio optimization,
                     Monte Carlo methods, and historical options research when suitable data exists.
