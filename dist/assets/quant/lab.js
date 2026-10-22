@@ -1,4 +1,4 @@
-import {backtest, drawdowns, parseCSV, validateRows} from './engine.js?v=0af2ad6b8825';
+import {backtest, drawdowns, parseCSV, validateRows} from './engine.js?v=3d4b22216cc2';
 import {comparison, MAX_IMPORTED_BYTES, restoreExperiment} from './experiments.js?v=d508b0bb21db';
 const $ = s => document.querySelector(s), money = n => n.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}), pct = n => `${(n*100).toFixed(2)}%`;
 let bundled, data, current;
@@ -70,6 +70,9 @@ function render(experiment) {
   $('#walk-forward-results').hidden=!r.walkForward;
   $('#walk-forward-folds').replaceChildren();
   if(r.walkForward){const w=r.walkForward;$('#walk-forward-summary').textContent=`${w.folds.length} non-overlapping test folds · compounded strategy return ${pct(w.strategyReturn)} vs. ${pct(w.benchmarkReturn)} buy and hold · ${w.winningFolds}/${w.folds.length} folds beat the benchmark.`;for(const fold of w.folds){const tr=el('tr','');for(const value of [fold.number,`${fold.trainingStart} → ${fold.trainingEnd}`,`${fold.testStart} → ${fold.testEnd}`,fold.testObservations,pct(fold.strategy.totalReturn),pct(fold.benchmark.totalReturn),fold.strategy.sharpe===null?'N/A':fold.strategy.sharpe.toFixed(2)])tr.append(el('td',value));$('#walk-forward-folds').append(tr);}}
+  $('#cost-sensitivity-results').hidden=!r.costSensitivity;
+  $('#cost-scenarios').replaceChildren();
+  if(r.costSensitivity){const c=r.costSensitivity;$('#cost-sensitivity-summary').textContent=`Same strategy, lookback, dates, and capital rerun across ${c.scenarios.length} transaction-cost assumptions. Rows are ordered by cost, not performance.`;for(const scenario of c.scenarios){const tr=el('tr','',scenario.feeBps===c.selectedFeeBps?'test-row':'');for(const value of [`${scenario.feeBps} bps`,pct(scenario.totalReturn),scenario.testReturn===null?'N/A':pct(scenario.testReturn),pct(scenario.benchmarkReturn),money(scenario.costs),money(scenario.finalValue),scenario.trades])tr.append(el('td',value));$('#cost-scenarios').append(tr);}}
   draw(r);
   drawDrawdown(r);
   const testSummary=r.periods?` Out-of-sample test return: ${pct(r.periods.test.strategy.totalReturn)} vs. ${pct(r.periods.test.benchmark.totalReturn)} for buy and hold.`:'';
@@ -85,12 +88,14 @@ $('#backtest-form').addEventListener('submit',event=>{
     const config={strategy:$('#strategy').value,start:$('#start').value,end:$('#end').value,testStart:$('#test-start').value,capital:Number($('#capital').value),lookback:Number($('#lookback').value),feeBps:Number($('#fee').value)};
     if($('#compare-parameters').checked)config.parameterLookbacks=$('#parameter-candidates').value.split(',').map(value=>Number(value.trim()));
     if($('#walk-forward').checked)config.walkForwardWindow=Number($('#walk-forward-window').value);
+    if($('#cost-sensitivity').checked)config.costSensitivityBps=$('#cost-scenarios-input').value.split(',').map(value=>Number(value.trim()));
     const result=backtest(data.rows,config);
     render({id:crypto.randomUUID(),created:new Date().toISOString(),data:{...data,ticker:$('#dataset').value==='csv'?($('#ticker').value.trim()||'CUSTOM'):data.ticker},result});
     status(result.parameterComparison?`Backtest complete. Compared ${result.parameterComparison.configurationsTried} training configurations and selected lookback ${result.config.lookback}.`:'Backtest complete. Results reflect the settings at the time of this run.');
   }catch(error){status(error.message);}
 });
 $('#walk-forward').addEventListener('change',()=>{$('#walk-forward-window').disabled=!$('#walk-forward').checked;});
+$('#cost-sensitivity').addEventListener('change',()=>{$('#cost-scenarios-field').hidden=!$('#cost-sensitivity').checked;});
 $('#compare-parameters').addEventListener('change',()=>{
   $('#parameter-candidates-field').hidden=!$('#compare-parameters').checked;
   $('#lookback').disabled=$('#compare-parameters').checked||$('#strategy').value==='hold';

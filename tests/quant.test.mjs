@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {backtest,compareParameters,drawdowns,parseCSV,metrics,walkForward} from '../dist/assets/quant/engine.js';
+import {backtest,compareCosts,compareParameters,drawdowns,parseCSV,metrics,walkForward} from '../dist/assets/quant/engine.js';
 const rows=prices=>prices.map((close,i)=>({date:`2024-01-${String(i+1).padStart(2,'0')}`,close}));
 const config={start:'2024-01-03',end:'2024-01-06',capital:100,lookback:1,feeBps:0,strategy:'momentum'};
 test('hold matches hand-calculated equity and benchmark',()=>{const r=backtest(rows([100,100,100,120,90,110]),{...config,strategy:'hold'});assert.equal(r.strategy.metrics.finalValue,110);assert.deepEqual(r.strategy,r.benchmark);assert.ok(Math.abs(r.strategy.metrics.maxDrawdown+.25)<1e-12);});
@@ -97,4 +97,24 @@ test('parameter comparison validates candidates and drives the full test config'
   assert.equal(result.config.lookback,result.parameterComparison.selectedLookback);
   assert.deepEqual(result.config.parameterLookbacks,[1,2,3]);
   assert.ok(result.periods.test);
+});
+
+test('cost sensitivity reruns one fixed configuration in ascending cost order',()=>{
+  const data=rows([100,110,100,120,90,110,80,100]);
+  const settings={...config,end:'2024-01-08',testStart:'2024-01-06',feeBps:10};
+  const result=compareCosts(data,settings,[25,0,10]);
+  assert.deepEqual(result.scenarios.map(scenario=>scenario.feeBps),[0,10,25]);
+  assert.equal(result.selectedFeeBps,10);
+  assert.ok(result.scenarios[0].totalReturn>result.scenarios[1].totalReturn);
+  assert.ok(result.scenarios[1].totalReturn>result.scenarios[2].totalReturn);
+  assert.ok(result.scenarios.every(scenario=>scenario.testReturn!==null&&scenario.trades===result.scenarios[0].trades));
+});
+
+test('cost sensitivity validates scenarios and is included in the backtest result',()=>{
+  const data=rows([100,110,100,120,90,110,80,100]);
+  const settings={...config,end:'2024-01-08',testStart:'2024-01-06',costSensitivityBps:[0,5,20]};
+  const result=backtest(data,settings);
+  assert.deepEqual(result.costSensitivity.scenarios.map(scenario=>scenario.feeBps),[0,5,20]);
+  assert.ok(result.costSensitivity.scenarios.every(scenario=>scenario.testReturn!==null));
+  for(const rates of [[0],[0,0],[0,101],[0,5,10,15,20,25,30]])assert.throws(()=>compareCosts(data,settings,rates),/2–6/);
 });

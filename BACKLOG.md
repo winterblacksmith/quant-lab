@@ -1,8 +1,7 @@
 # Orion Quant Lab backlog
 
 ## Next
-- Add a cost-sensitivity view that reruns one fixed configuration across a small,
-  disclosed range of transaction-cost assumptions.
+- Add an explicit slippage assumption separate from proportional transaction costs.
 
 ## Later
 - Additional strategies and Strategy Arena using the priorities and readiness rules in
@@ -13,6 +12,8 @@
 - Add a second asset only after its data quality and adjustment basis are documented.
 
 ## Completed
+- Transaction-cost sensitivity across a small disclosed set of assumptions, rerunning
+  one fixed configuration without ranking or selecting a winner.
 - Guarded lookback comparison ranked by training return only, with disclosed search
   breadth and untouched test results.
 - Expanding walk-forward validation with non-overlapping out-of-sample folds and

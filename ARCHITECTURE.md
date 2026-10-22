@@ -59,6 +59,12 @@ lookback is then used for the full continuous run, whose test metrics remain out
 ranking. The result records every candidate's training return, Sharpe, drawdown, and trade
 count plus the number of configurations tried so the search breadth is visible.
 
+Optional transaction-cost sensitivity accepts 2–6 unique assumptions from 0–100 basis
+points and reruns one fixed strategy, lookback, date range, and capital setting at each
+cost. Scenarios are ordered by cost rather than performance and report full-period and
+test returns, benchmark return, modeled costs, final value, and unchanged trade count.
+It is a robustness view, not a parameter selector.
+
 The moving-average filter owns the asset when the close at `t-1` is strictly
 greater than the arithmetic average of closes `t-lookback` through `t-1`.
 Equality means cash. It uses the same delayed execution, long-or-cash sizing,

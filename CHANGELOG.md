@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-22
+
+- Added transaction-cost sensitivity for 2–6 disclosed fee assumptions. Each scenario
+  reruns the same fixed configuration and reports full-period and test returns without
+  ranking or selecting a winner.
+
 ## 2026-10-20
 
 - Added guarded lookback comparison for 2–12 candidate configurations. Candidates are

@@ -159,6 +159,20 @@
                   required
               /></label>
               <p class="fine">5 bps = 0.05% of traded value, on each buy or sell.</p>
+              <label class="check-field"
+                ><input id="cost-sensitivity" type="checkbox" />
+                <span>Compare transaction-cost assumptions</span></label
+              >
+              <label id="cost-scenarios-field" hidden
+                >Cost scenarios · basis points<input
+                  id="cost-scenarios-input"
+                  value="0, 5, 10, 25, 50"
+                />
+                <span class="fine"
+                  >Enter 2–6 unique values from 0–100 bps. Every row reruns the same fixed
+                  configuration; results are not ranked.</span
+                ></label
+              >
               <button class="launch" id="run" disabled>Run backtest <span>↗</span></button>
             </form>
             <p id="status" role="status" aria-live="polite"></p>
@@ -251,6 +265,34 @@
                       </tr>
                     </thead>
                     <tbody id="walk-forward-folds"></tbody>
+                  </table>
+                </div>
+              </section>
+              <section
+                id="cost-sensitivity-results"
+                class="panel period-panel"
+                aria-labelledby="cost-sensitivity-title"
+                hidden
+              >
+                <div class="result-heading">
+                  <h2 id="cost-sensitivity-title">Transaction-cost sensitivity</h2>
+                  <span class="fine">Selected assumption highlighted</span>
+                </div>
+                <p id="cost-sensitivity-summary" class="fine"></p>
+                <div class="table-wrap period-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Cost</th>
+                        <th>Full return</th>
+                        <th>Test return</th>
+                        <th>B&amp;H return</th>
+                        <th>Paid costs</th>
+                        <th>Final value</th>
+                        <th>Trades</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cost-scenarios"></tbody>
                   </table>
                 </div>
               </section>
@@ -406,9 +448,11 @@
               also overfits it. The optional comparison ranks a disclosed set of lookbacks using
               training return only before evaluating the winner on the test period. Expanding
               walk-forward validation repeats evaluation across consecutive, non-overlapping test
-              windows and compounds only their test returns. A single ETF and a small search do not
-              establish robustness. Imported data must have a consistent daily frequency and
-              adjustment basis. Historical results do not predict future returns.
+              windows and compounds only their test returns. Cost sensitivity reruns one fixed
+              configuration across disclosed fee assumptions; it does not select a winner. A single
+              ETF and a small search do not establish robustness. Imported data must have a
+              consistent daily frequency and adjustment basis. Historical results do not predict
+              future returns.
             </p>
           </details>
         </section>
@@ -467,6 +511,6 @@
       <div class="palette-help">↑ ↓ navigate <span>↵ open</span></div>
     </dialog>
     <script src="/assets/atlas-shell/app.js?v=d10815200a08" defer></script>
-    <script type="module" src="/assets/quant/lab.js?v=832cb23586f7"></script>
+    <script type="module" src="/assets/quant/lab.js?v=624cd487ac13"></script>
   </body>
 </html>
