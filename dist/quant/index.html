@@ -221,7 +221,7 @@
                 <h3>Trade at today’s close.</h3>
                 <p>
                   If the rule changes from cash to invested, buy. If it changes back, sell. Deduct
-                  the selected cost on each transaction.
+                  the selected fee and adverse execution slippage on each transaction.
                 </p>
               </li>
               <li>
@@ -254,11 +254,11 @@
                   </ol>
                 </div>
                 <div>
-                  <span class="exhibit-kicker">VALIDATION STILL TO BUILD</span>
+                  <span class="exhibit-kicker">VALIDATION IN THE LAB</span>
                   <ol start="6">
-                    <li>Reserve unseen data for out-of-sample testing.</li>
-                    <li>Study how trying many settings can overfit the historical sample.</li>
-                    <li>Test sensitivity to costs and add a separate slippage model.</li>
+                    <li>Reserve unseen data for out-of-sample and walk-forward testing.</li>
+                    <li>Disclose the breadth of training-only parameter comparisons.</li>
+                    <li>Test fee sensitivity and model execution slippage separately.</li>
                   </ol>
                 </div>
               </div>
@@ -480,7 +480,7 @@
                     walk-forward validation.
                   </li>
                   <li>Transaction-cost sensitivity across disclosed fixed assumptions.</li>
-                  <li>A separate slippage model distinct from proportional transaction costs.</li>
+                  <li>Independent fee-and-slippage sensitivity scenarios.</li>
                   <li>
                     Only after the validation foundation: factor research, portfolio optimization,
                     Monte Carlo methods, and historical options research when suitable data exists.

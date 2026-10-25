@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-24
+
+- Added a separate slippage assumption that adversely adjusts buy and sell execution
+  prices while keeping proportional transaction fees and slippage costs distinct.
+
 ## 2026-10-22
 
 - Added transaction-cost sensitivity for 2–6 disclosed fee assumptions. Each scenario

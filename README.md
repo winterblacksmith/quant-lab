@@ -12,7 +12,7 @@ educational European options calculation.
 - Compare time-series momentum or a moving-average trend filter with buy and hold
   on the same history. The moving-average rule uses the previous close and the
   average of the previous `N` closes; a signal executes at the next close.
-- Change dates, lookback, starting capital, and transaction costs.
+- Change dates, lookback, starting capital, transaction fees, and execution slippage.
 - Inspect daily equity, geometric annualized return, drawdown, volatility, Sharpe
   ratio, and individual trades.
 - Save experiments locally and export full experiment JSON or daily equity CSV.

@@ -1,4 +1,4 @@
-export const VERSION = '1.5.0';
+export const VERSION = '1.6.0';
 export function validateRows(rows) {
   if (!Array.isArray(rows) || rows.length < 3 || rows.length > 20000) throw new Error('Provide 3–20,000 daily observations.');
   rows.forEach((r, i) => {
@@ -46,7 +46,8 @@ export function backtest(rows, config) {
     return result;
   }
   const {start,end,capital,lookback,feeBps,strategy} = config;
-  if (!['momentum','sma','hold'].includes(strategy) || !Number.isFinite(capital) || capital <= 0 || capital > 1e9 || !Number.isInteger(lookback) || lookback < (strategy === 'sma' ? 2 : 1) || lookback > 252 || !Number.isFinite(feeBps) || feeBps < 0 || feeBps > 100) throw new Error('Check capital, lookback (2–252 for moving average), and costs (0–100 bps).');
+  const slippageBps=config.slippageBps??0;
+  if (!['momentum','sma','hold'].includes(strategy) || !Number.isFinite(capital) || capital <= 0 || capital > 1e9 || !Number.isInteger(lookback) || lookback < (strategy === 'sma' ? 2 : 1) || lookback > 252 || !Number.isFinite(feeBps) || feeBps < 0 || feeBps > 100 || !Number.isFinite(slippageBps) || slippageBps < 0 || slippageBps > 100) throw new Error('Check capital, lookback (2–252 for moving average), fees, and slippage (0–100 bps).');
   if (![start,end].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d) && Number.isFinite(Date.parse(d)) && new Date(d).toISOString().slice(0,10) === d) || start > end || start < rows[0].date || end > rows.at(-1).date) throw new Error('Choose a valid date range within this dataset.');
   const first = rows.findIndex(r=>r.date>=start), selected = rows.filter(r=>r.date>=start && r.date<=end);
   if (selected.length < 3) throw new Error('Choose at least three trading observations.');
@@ -65,22 +66,26 @@ export function backtest(rows, config) {
     return rows[i-1].close > priorAverage;
   }
   function simulate(kind) {
-    let cash = capital, shares = 0, costs = 0;
-    const trades = [], curve = [], fee = feeBps / 10000;
+    let cash = capital, shares = 0, costs = 0, slippageCosts = 0;
+    const trades = [], curve = [], fee = feeBps / 10000, slippage = slippageBps / 10000;
     selected.forEach((r,j)=>{
       const i = first+j;
       const own = target(kind, i);
       if (own && !shares) {
-        shares = cash / (r.close*(1+fee));
-        const cost = shares*r.close*fee; costs += cost; cash = 0;
-        trades.push({date:r.date,side:'BUY',price:r.close,shares,cost});
+        const executionPrice=r.close*(1+slippage);
+        shares = cash / (executionPrice*(1+fee));
+        const cost = shares*executionPrice*fee, slippageCost=shares*(executionPrice-r.close);
+        costs += cost; slippageCosts += slippageCost; cash = 0;
+        trades.push({date:r.date,side:'BUY',price:executionPrice,close:r.close,shares,cost,slippageCost});
       } else if (!own && shares) {
-        const cost = shares*r.close*fee; cash = shares*r.close-cost; costs += cost;
-        trades.push({date:r.date,side:'SELL',price:r.close,shares,cost}); shares=0;
+        const executionPrice=r.close*(1-slippage);
+        const cost = shares*executionPrice*fee, slippageCost=shares*(r.close-executionPrice);
+        cash = shares*executionPrice-cost; costs += cost; slippageCosts += slippageCost;
+        trades.push({date:r.date,side:'SELL',price:executionPrice,close:r.close,shares,cost,slippageCost}); shares=0;
       }
       curve.push({date:r.date,equity:cash+shares*r.close,cash,shares});
     });
-    return {curve,trades,costs,metrics:metrics(curve,capital)};
+    return {curve,trades,costs,slippageCosts,metrics:metrics(curve,capital)};
   }
   const strategyResult=simulate(strategy),benchmark=simulate('hold');
   let periods=null;

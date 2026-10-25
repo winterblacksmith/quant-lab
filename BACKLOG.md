@@ -1,7 +1,7 @@
 # Orion Quant Lab backlog
 
 ## Next
-- Add an explicit slippage assumption separate from proportional transaction costs.
+- Add transaction-cost sensitivity that varies fees and slippage independently.
 
 ## Later
 - Additional strategies and Strategy Arena using the priorities and readiness rules in
@@ -12,6 +12,8 @@
 - Add a second asset only after its data quality and adjustment basis are documented.
 
 ## Completed
+- Explicit fixed slippage assumption modeled through adverse buy and sell execution
+  prices, reported separately from proportional transaction fees.
 - Transaction-cost sensitivity across a small disclosed set of assumptions, rerunning
   one fixed configuration without ranking or selecting a winner.
 - Guarded lookback comparison ranked by training return only, with disclosed search

@@ -1,5 +1,5 @@
-import {backtest, drawdowns, parseCSV, validateRows} from './engine.js?v=3d4b22216cc2';
-import {comparison, MAX_IMPORTED_BYTES, restoreExperiment} from './experiments.js?v=d508b0bb21db';
+import {backtest, drawdowns, parseCSV, validateRows} from './engine.js?v=c934fca7879c';
+import {comparison, MAX_IMPORTED_BYTES, restoreExperiment} from './experiments.js?v=25aa2e7508c6';
 const $ = s => document.querySelector(s), money = n => n.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}), pct = n => `${(n*100).toFixed(2)}%`;
 let bundled, data, current;
 const key = 'atlas-experiments-v1';
@@ -76,16 +76,16 @@ function render(experiment) {
   draw(r);
   drawDrawdown(r);
   const testSummary=r.periods?` Out-of-sample test return: ${pct(r.periods.test.strategy.totalReturn)} vs. ${pct(r.periods.test.benchmark.totalReturn)} for buy and hold.`:'';
-  $('#interpretation').textContent=`Final value ${money(s.finalValue)} vs. ${money(b.finalValue)} for buy and hold. Strategy costs: ${money(r.strategy.costs)}. Full-period difference: ${((s.totalReturn-b.totalReturn)*100).toFixed(2)} percentage points.${testSummary}`;
+  $('#interpretation').textContent=`Final value ${money(s.finalValue)} vs. ${money(b.finalValue)} for buy and hold. Strategy fees: ${money(r.strategy.costs)}; modeled slippage: ${money(r.strategy.slippageCosts)}. Full-period difference: ${((s.totalReturn-b.totalReturn)*100).toFixed(2)} percentage points.${testSummary}`;
   $('#trade-count').textContent=`${r.strategy.trades.length} executions`;
   $('#trades').replaceChildren();
-  for(const t of r.strategy.trades){const tr=el('tr','');for(const v of [t.date,t.side,t.price.toFixed(2),t.shares.toFixed(4),t.cost.toFixed(2)])tr.append(el('td',v));$('#trades').append(tr);}
-  if(!r.strategy.trades.length){const tr=el('tr','');const td=el('td','No trades. The strategy held cash throughout.');td.colSpan=5;tr.append(td);$('#trades').append(tr);}
+  for(const t of r.strategy.trades){const tr=el('tr','');for(const v of [t.date,t.side,t.close.toFixed(2),t.price.toFixed(2),t.shares.toFixed(4),t.cost.toFixed(2),t.slippageCost.toFixed(2)])tr.append(el('td',v));$('#trades').append(tr);}
+  if(!r.strategy.trades.length){const tr=el('tr','');const td=el('td','No trades. The strategy held cash throughout.');td.colSpan=7;tr.append(td);$('#trades').append(tr);}
 }
 $('#backtest-form').addEventListener('submit',event=>{
   event.preventDefault();try {
     if(!data)throw new Error('Load a dataset first.');
-    const config={strategy:$('#strategy').value,start:$('#start').value,end:$('#end').value,testStart:$('#test-start').value,capital:Number($('#capital').value),lookback:Number($('#lookback').value),feeBps:Number($('#fee').value)};
+    const config={strategy:$('#strategy').value,start:$('#start').value,end:$('#end').value,testStart:$('#test-start').value,capital:Number($('#capital').value),lookback:Number($('#lookback').value),feeBps:Number($('#fee').value),slippageBps:Number($('#slippage').value)};
     if($('#compare-parameters').checked)config.parameterLookbacks=$('#parameter-candidates').value.split(',').map(value=>Number(value.trim()));
     if($('#walk-forward').checked)config.walkForwardWindow=Number($('#walk-forward-window').value);
     if($('#cost-sensitivity').checked)config.costSensitivityBps=$('#cost-scenarios-input').value.split(',').map(value=>Number(value.trim()));

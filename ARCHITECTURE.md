@@ -22,9 +22,11 @@ Signals use only closes available before execution. At close t, momentum uses
 close[t-1] / close[t-1-lookback] > 1. Positions established at close t first earn
 the return from t to t+1. Warmup observations precede the selected test window.
 Buy-and-hold enters at the first test close. Both pay the same proportional fee
-on each entry or exit. Fractional shares; long or cash only; cash earns zero;
-no leverage, taxes, separate spread or slippage. Open positions are marked to
-market at the last close, without forced liquidation. Adjusted prices model a
+on each entry or exit. A separate fixed slippage assumption raises buy execution
+prices above the observed close and lowers sell execution prices below it; this is
+an explicit haircut rather than an estimate of market impact or a variable spread.
+Fractional shares; long or cash only; cash earns zero; no leverage or taxes. Open
+positions are marked to market at the last close, without forced liquidation. Adjusted prices model a
 reinvested distribution series, not actual historical share counts or fills.
 
 Return = final equity / initial capital - 1. Annualized return is the geometric

@@ -159,6 +159,20 @@
                   required
               /></label>
               <p class="fine">5 bps = 0.05% of traded value, on each buy or sell.</p>
+              <label
+                >Slippage per trade · basis points<input
+                  id="slippage"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value="0"
+                  required
+              /></label>
+              <p class="fine">
+                Adversely adjusts execution prices above the close for buys and below it for sells,
+                separately from fees.
+              </p>
               <label class="check-field"
                 ><input id="cost-sensitivity" type="checkbox" />
                 <span>Compare transaction-cost assumptions</span></label
@@ -350,9 +364,11 @@
                       <tr>
                         <th>Date</th>
                         <th>Side</th>
-                        <th>Price</th>
+                        <th>Close</th>
+                        <th>Execution price</th>
                         <th>Units*</th>
-                        <th>Cost</th>
+                        <th>Fee</th>
+                        <th>Slippage</th>
                       </tr>
                     </thead>
                     <tbody id="trades"></tbody>
@@ -405,8 +421,9 @@
             <p>
               A signal uses the previous session’s close and executes at the current close. It first
               earns the next session’s return. Warmup data comes before your chosen start date. Each
-              strategy and the benchmark pay the same proportional costs; fractional units are
-              allowed. Cash earns zero. No leverage, taxes, separate slippage, or forced final sale.
+              strategy and the benchmark pay the same proportional fees and adverse execution-price
+              slippage; fractional units are allowed. Cash earns zero. No leverage, taxes, market
+              impact, variable spreads, or forced final sale.
             </p>
             <p>
               SPY uses Yahoo Finance daily adjusted closes from 2020 onward. The data date and last
@@ -449,10 +466,11 @@
               training return only before evaluating the winner on the test period. Expanding
               walk-forward validation repeats evaluation across consecutive, non-overlapping test
               windows and compounds only their test returns. Cost sensitivity reruns one fixed
-              configuration across disclosed fee assumptions; it does not select a winner. A single
-              ETF and a small search do not establish robustness. Imported data must have a
-              consistent daily frequency and adjustment basis. Historical results do not predict
-              future returns.
+              configuration across disclosed fee assumptions; it does not select a winner. Slippage
+              is a fixed basis-point execution haircut, not a market-impact estimate. A single ETF
+              and a small search do not establish robustness. Imported data must have a consistent
+              daily frequency and adjustment basis. Historical results do not predict future
+              returns.
             </p>
           </details>
         </section>
@@ -511,6 +529,6 @@
       <div class="palette-help">↑ ↓ navigate <span>↵ open</span></div>
     </dialog>
     <script src="/assets/atlas-shell/app.js?v=d10815200a08" defer></script>
-    <script type="module" src="/assets/quant/lab.js?v=624cd487ac13"></script>
+    <script type="module" src="/assets/quant/lab.js?v=809a1336457c"></script>
   </body>
 </html>
