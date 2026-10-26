@@ -101,22 +101,29 @@ test('parameter comparison validates candidates and drives the full test config'
   assert.ok(result.periods.test);
 });
 
-test('cost sensitivity reruns one fixed configuration in ascending cost order',()=>{
+test('cost sensitivity reruns each fee and slippage combination in ascending order',()=>{
   const data=rows([100,110,100,120,90,110,80,100]);
-  const settings={...config,end:'2024-01-08',testStart:'2024-01-06',feeBps:10};
-  const result=compareCosts(data,settings,[25,0,10]);
-  assert.deepEqual(result.scenarios.map(scenario=>scenario.feeBps),[0,10,25]);
+  const settings={...config,end:'2024-01-08',testStart:'2024-01-06',feeBps:10,slippageBps:5};
+  const result=compareCosts(data,settings,[25,0,10],[20,0,5]);
+  assert.deepEqual(result.scenarios.map(scenario=>[scenario.feeBps,scenario.slippageBps]),[
+    [0,0],[0,5],[0,20],[10,0],[10,5],[10,20],[25,0],[25,5],[25,20]
+  ]);
   assert.equal(result.selectedFeeBps,10);
+  assert.equal(result.selectedSlippageBps,5);
   assert.ok(result.scenarios[0].totalReturn>result.scenarios[1].totalReturn);
   assert.ok(result.scenarios[1].totalReturn>result.scenarios[2].totalReturn);
+  assert.ok(result.scenarios[0].totalReturn>result.scenarios[3].totalReturn);
+  assert.ok(result.scenarios.some(scenario=>scenario.slippageCosts>0));
   assert.ok(result.scenarios.every(scenario=>scenario.testReturn!==null&&scenario.trades===result.scenarios[0].trades));
 });
 
 test('cost sensitivity validates scenarios and is included in the backtest result',()=>{
   const data=rows([100,110,100,120,90,110,80,100]);
-  const settings={...config,end:'2024-01-08',testStart:'2024-01-06',costSensitivityBps:[0,5,20]};
+  const settings={...config,end:'2024-01-08',testStart:'2024-01-06',costSensitivityBps:[0,5,20],costSensitivitySlippageBps:[0,10]};
   const result=backtest(data,settings);
-  assert.deepEqual(result.costSensitivity.scenarios.map(scenario=>scenario.feeBps),[0,5,20]);
+  assert.equal(result.costSensitivity.scenarios.length,6);
+  assert.deepEqual(result.costSensitivity.scenarios.map(scenario=>scenario.slippageBps),[0,10,0,10,0,10]);
   assert.ok(result.costSensitivity.scenarios.every(scenario=>scenario.testReturn!==null));
   for(const rates of [[0],[0,0],[0,101],[0,5,10,15,20,25,30]])assert.throws(()=>compareCosts(data,settings,rates),/2–6/);
+  for(const rates of [[],[0,0],[0,101],[0,5,10,15,20,25,30]])assert.throws(()=>compareCosts(data,settings,[0,5],rates),/1–6/);
 });

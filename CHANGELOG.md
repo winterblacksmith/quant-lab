@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-26
+
+- Extended transaction-cost sensitivity to rerun every selected fee and slippage
+  combination, with separate modeled-cost totals and no performance ranking.
+
 ## 2026-10-24
 
 - Added a separate slippage assumption that adversely adjusts buy and sell execution

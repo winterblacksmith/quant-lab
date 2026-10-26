@@ -178,13 +178,20 @@
                 <span>Compare transaction-cost assumptions</span></label
               >
               <label id="cost-scenarios-field" hidden
-                >Cost scenarios · basis points<input
+                >Fee scenarios · basis points<input
                   id="cost-scenarios-input"
                   value="0, 5, 10, 25, 50"
                 />
+                <span class="fine">Enter 2–6 unique values from 0–100 bps.</span></label
+              >
+              <label id="slippage-scenarios-field" hidden
+                >Slippage scenarios · basis points<input
+                  id="slippage-scenarios-input"
+                  value="0, 10, 25"
+                />
                 <span class="fine"
-                  >Enter 2–6 unique values from 0–100 bps. Every row reruns the same fixed
-                  configuration; results are not ranked.</span
+                  >Enter 1–6 unique values from 0–100 bps. Every fee/slippage combination reruns the
+                  same fixed configuration; results are not ranked.</span
                 ></label
               >
               <button class="launch" id="run" disabled>Run backtest <span>↗</span></button>
@@ -297,11 +304,13 @@
                   <table>
                     <thead>
                       <tr>
-                        <th>Cost</th>
+                        <th>Fee</th>
+                        <th>Slippage</th>
                         <th>Full return</th>
                         <th>Test return</th>
                         <th>B&amp;H return</th>
-                        <th>Paid costs</th>
+                        <th>Fees paid</th>
+                        <th>Modeled slippage</th>
                         <th>Final value</th>
                         <th>Trades</th>
                       </tr>
@@ -529,6 +538,6 @@
       <div class="palette-help">↑ ↓ navigate <span>↵ open</span></div>
     </dialog>
     <script src="/assets/atlas-shell/app.js?v=d10815200a08" defer></script>
-    <script type="module" src="/assets/quant/lab.js?v=809a1336457c"></script>
+    <script type="module" src="/assets/quant/lab.js?v=06357bdfb754"></script>
   </body>
 </html>

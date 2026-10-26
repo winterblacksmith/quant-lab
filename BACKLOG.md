@@ -1,7 +1,7 @@
 # Orion Quant Lab backlog
 
 ## Next
-- Add transaction-cost sensitivity that varies fees and slippage independently.
+- Add a close-channel breakout after validating its signal timing against the strategy roadmap.
 
 ## Later
 - Additional strategies and Strategy Arena using the priorities and readiness rules in
@@ -12,6 +12,8 @@
 - Add a second asset only after its data quality and adjustment basis are documented.
 
 ## Completed
+- Transaction-cost sensitivity across independently varied fee and slippage assumptions,
+  reported as ordered combinations without performance ranking.
 - Explicit fixed slippage assumption modeled through adverse buy and sell execution
   prices, reported separately from proportional transaction fees.
 - Transaction-cost sensitivity across a small disclosed set of assumptions, rerunning

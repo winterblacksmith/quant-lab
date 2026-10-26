@@ -1,4 +1,4 @@
-export const VERSION = '1.6.0';
+export const VERSION = '1.7.0';
 export function validateRows(rows) {
   if (!Array.isArray(rows) || rows.length < 3 || rows.length > 20000) throw new Error('Provide 3–20,000 daily observations.');
   rows.forEach((r, i) => {
@@ -99,30 +99,38 @@ export function backtest(rows, config) {
   }
   const result={version:VERSION,config:{...config},strategy:strategyResult,benchmark,periods,parameterComparison:null};
   result.walkForward=config.walkForwardWindow===undefined?null:walkForward(rows,config,config.walkForwardWindow);
-  result.costSensitivity=config.costSensitivityBps===undefined?null:compareCosts(rows,config,config.costSensitivityBps);
+  result.costSensitivity=config.costSensitivityBps===undefined?null:compareCosts(rows,config,config.costSensitivityBps,config.costSensitivitySlippageBps);
   return result;
 }
 
-export function compareCosts(rows, config, feeRates) {
+export function compareCosts(rows, config, feeRates, slippageRates = [config.slippageBps ?? 0]) {
   validateRows(rows);
   if (!Array.isArray(feeRates) || feeRates.length < 2 || feeRates.length > 6 ||
       feeRates.some(value=>!Number.isFinite(value) || value < 0 || value > 100) ||
       new Set(feeRates).size !== feeRates.length) {
-    throw new Error('Compare 2–6 unique cost assumptions from 0–100 basis points.');
+    throw new Error('Compare 2–6 unique fee assumptions from 0–100 basis points.');
   }
-  const scenarios=[...feeRates].sort((a,b)=>a-b).map(feeBps=>{
-    const run=backtest(rows,{...config,feeBps,parameterLookbacks:undefined,walkForwardWindow:undefined,costSensitivityBps:undefined});
-    return {
+  if (!Array.isArray(slippageRates) || slippageRates.length < 1 || slippageRates.length > 6 ||
+      slippageRates.some(value=>!Number.isFinite(value) || value < 0 || value > 100) ||
+      new Set(slippageRates).size !== slippageRates.length) {
+    throw new Error('Compare 1–6 unique slippage assumptions from 0–100 basis points.');
+  }
+  const scenarios=[];
+  for(const feeBps of [...feeRates].sort((a,b)=>a-b)) for(const slippageBps of [...slippageRates].sort((a,b)=>a-b)) {
+    const run=backtest(rows,{...config,feeBps,slippageBps,parameterLookbacks:undefined,walkForwardWindow:undefined,costSensitivityBps:undefined,costSensitivitySlippageBps:undefined});
+    scenarios.push({
       feeBps,
+      slippageBps,
       totalReturn:run.strategy.metrics.totalReturn,
       testReturn:run.periods?.test.strategy.totalReturn??null,
       benchmarkReturn:run.benchmark.metrics.totalReturn,
       finalValue:run.strategy.metrics.finalValue,
       costs:run.strategy.costs,
+      slippageCosts:run.strategy.slippageCosts,
       trades:run.strategy.trades.length
-    };
-  });
-  return {scenarios,selectedFeeBps:config.feeBps};
+    });
+  }
+  return {scenarios,selectedFeeBps:config.feeBps,selectedSlippageBps:config.slippageBps??0};
 }
 
 export function compareParameters(rows, config, candidates) {
