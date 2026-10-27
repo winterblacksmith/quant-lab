@@ -1,5 +1,5 @@
-import {backtest, drawdowns, parseCSV, validateRows} from './engine.js?v=5af1cf0ce667';
-import {comparison, MAX_IMPORTED_BYTES, restoreExperiment} from './experiments.js?v=25aa2e7508c6';
+import {backtest, drawdowns, parseCSV, validateRows} from './engine.js?v=8d2e8681dffa';
+import {comparison, MAX_IMPORTED_BYTES, restoreExperiment} from './experiments.js?v=a26cbbc1082f';
 const $ = s => document.querySelector(s), money = n => n.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}), pct = n => `${(n*100).toFixed(2)}%`;
 let bundled, data, current;
 const key = 'atlas-experiments-v1';
