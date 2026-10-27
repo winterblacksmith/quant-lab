@@ -57,6 +57,28 @@ test('moving-average filter enforces warmup, charges both trades, and prevents l
   assert.equal(result.strategy.trades[0].date,changed.strategy.trades[0].date);
 });
 
+test('close-channel breakout persists between strict entry and exit thresholds',()=>{
+  const settings={...config,strategy:'channel',lookback:3,exitLookback:2,start:'2024-01-05',end:'2024-01-08'};
+  const result=backtest(rows([10,11,12,13,14,14,9,8]),settings);
+  assert.deepEqual(result.strategy.trades.map(trade=>[trade.date,trade.side]),[
+    ['2024-01-05','BUY'],['2024-01-08','SELL']
+  ]);
+  assert.equal(result.strategy.curve[1].shares,result.strategy.curve[2].shares);
+  assert.ok(Math.abs(result.strategy.metrics.finalValue-100*8/14)<1e-10);
+});
+
+test('close-channel breakout validates windows, charges costs, and prevents lookahead',()=>{
+  const data=rows([10,11,12,13,14,14,9,8]);
+  const settings={...config,strategy:'channel',lookback:3,exitLookback:2,start:'2024-01-05',end:'2024-01-08',feeBps:100};
+  assert.throws(()=>backtest(data,{...settings,start:'2024-01-04'}),/Close-channel breakout needs/);
+  for(const exitLookback of [0,3,3.5])assert.throws(()=>backtest(data,{...settings,exitLookback}),/exit must be shorter/);
+  const result=backtest(data,settings);
+  assert.ok(Math.abs(result.strategy.metrics.finalValue-100/(14*1.01)*8*.99)<1e-10);
+  const changed=backtest(rows([10,11,12,13,14,1,900,1]),settings);
+  assert.deepEqual(result.strategy.curve[0].shares,changed.strategy.curve[0].shares);
+  assert.equal(result.strategy.trades[0].date,changed.strategy.trades[0].date);
+});
+
 test('walk-forward compounds only consecutive out-of-sample windows',()=>{
   const data=rows([90,95,100,105,110,120,126,132,138,144,150,156]);
   const settings={...config,strategy:'hold',start:'2024-01-03',end:'2024-01-12',testStart:'2024-01-07'};

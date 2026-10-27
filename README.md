@@ -9,9 +9,9 @@ educational European options calculation.
 
 ## What you can investigate
 
-- Compare time-series momentum or a moving-average trend filter with buy and hold
-  on the same history. The moving-average rule uses the previous close and the
-  average of the previous `N` closes; a signal executes at the next close.
+- Compare time-series momentum, a moving-average trend filter, or a stateful
+  close-channel breakout with buy and hold on the same history. Every strategy
+  derives its signal from prior closes and executes at the next close.
 - Change dates, lookback, starting capital, transaction fees, and execution slippage;
   compare independently varied fee/slippage combinations without ranking them.
 - Inspect daily equity, geometric annualized return, drawdown, volatility, Sharpe

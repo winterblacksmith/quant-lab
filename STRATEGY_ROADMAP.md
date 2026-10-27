@@ -40,7 +40,7 @@ task increment.
 - **Dependency:** implement after the single-average version so shared rolling-average
   code is already independently tested.
 
-### Close-channel breakout
+### Close-channel breakout — implemented
 
 - **Rule:** enter when the prior close exceeds the highest earlier close in an entry
   window; exit when it falls below the lowest earlier close in a shorter exit window.

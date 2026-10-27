@@ -74,6 +74,12 @@ Equality means cash. It uses the same delayed execution, long-or-cash sizing,
 transaction costs, and buy-and-hold benchmark as momentum. At least `lookback`
 warmup observations must precede the selected start date.
 
+The close-channel breakout enters when the close at `t-1` is strictly above every
+earlier close in its entry window and exits when that prior close is strictly below
+every earlier close in its shorter exit window. Equality preserves the current
+position, so repeated threshold touches do not create trades. Both signals execute
+at close `t`; the longer entry window determines the required warmup.
+
 ## European options calculator
 
 The independent Black–Scholes–Merton module calculates theoretical European

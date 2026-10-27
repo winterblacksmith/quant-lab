@@ -212,7 +212,8 @@
                 <h3>Read yesterday’s prices.</h3>
                 <p>
                   Momentum compares yesterday’s close with one lookback earlier; the moving-average
-                  filter compares it with a recent average. Earlier data warms up either rule before
+                  filter compares it with a recent average; the close-channel breakout compares it
+                  with earlier entry or exit thresholds. Earlier data warms up every rule before
                   your selected test window.
                 </p>
               </li>
@@ -455,8 +456,9 @@
                 <ul>
                   <li>SPY daily adjusted-price snapshot and validated daily CSV import.</li>
                   <li>
-                    Time-series momentum, moving-average trend filter, and buy-and-hold backtests
-                    with configurable dates, capital, lookback, and proportional trade costs.
+                    Time-series momentum, moving-average trend filter, close-channel breakout, and
+                    buy-and-hold backtests with configurable dates, capital, lookbacks, and modeled
+                    execution costs.
                   </li>
                   <li>
                     Same-asset benchmark; equity and drawdown charts; return, annualized return,

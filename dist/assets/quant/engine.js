@@ -1,4 +1,4 @@
-export const VERSION = '1.7.0';
+export const VERSION = '1.8.0';
 export function validateRows(rows) {
   if (!Array.isArray(rows) || rows.length < 3 || rows.length > 20000) throw new Error('Provide 3–20,000 daily observations.');
   rows.forEach((r, i) => {
@@ -46,22 +46,30 @@ export function backtest(rows, config) {
     return result;
   }
   const {start,end,capital,lookback,feeBps,strategy} = config;
+  const exitLookback=config.exitLookback??Math.max(1,Math.min(lookback-1,10));
   const slippageBps=config.slippageBps??0;
-  if (!['momentum','sma','hold'].includes(strategy) || !Number.isFinite(capital) || capital <= 0 || capital > 1e9 || !Number.isInteger(lookback) || lookback < (strategy === 'sma' ? 2 : 1) || lookback > 252 || !Number.isFinite(feeBps) || feeBps < 0 || feeBps > 100 || !Number.isFinite(slippageBps) || slippageBps < 0 || slippageBps > 100) throw new Error('Check capital, lookback (2–252 for moving average), fees, and slippage (0–100 bps).');
+  if (!['momentum','sma','channel','hold'].includes(strategy) || !Number.isFinite(capital) || capital <= 0 || capital > 1e9 || !Number.isInteger(lookback) || lookback < (strategy === 'sma' ? 2 : 1) || lookback > 252 || (strategy === 'channel' && (!Number.isInteger(exitLookback) || exitLookback < 1 || exitLookback >= lookback)) || !Number.isFinite(feeBps) || feeBps < 0 || feeBps > 100 || !Number.isFinite(slippageBps) || slippageBps < 0 || slippageBps > 100) throw new Error('Check capital, lookback (2–252 for moving average; channel exit must be shorter than entry), fees, and slippage (0–100 bps).');
   if (![start,end].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d) && Number.isFinite(Date.parse(d)) && new Date(d).toISOString().slice(0,10) === d) || start > end || start < rows[0].date || end > rows.at(-1).date) throw new Error('Choose a valid date range within this dataset.');
   const first = rows.findIndex(r=>r.date>=start), selected = rows.filter(r=>r.date>=start && r.date<=end);
   if (selected.length < 3) throw new Error('Choose at least three trading observations.');
   if (strategy === 'momentum' && first < lookback + 1) throw new Error(`Momentum needs ${lookback+1} observations before the start date. Choose a later start.`);
   if (strategy === 'sma' && first < lookback) throw new Error(`Moving average needs ${lookback} observations before the start date. Choose a later start.`);
+  if (strategy === 'channel' && first < lookback + 1) throw new Error(`Close-channel breakout needs ${lookback+1} observations before the start date. Choose a later start.`);
   const prefix = strategy === 'sma' ? [0] : null;
   if (prefix) for (const row of rows) {
     const sum = prefix.at(-1) + row.close;
     if (!Number.isFinite(sum)) throw new Error('Prices are too large for a moving-average calculation.');
     prefix.push(sum);
   }
-  function target(kind, i) {
+  function target(kind, i, own) {
     if (kind === 'hold') return true;
     if (kind === 'momentum') return rows[i-1].close > rows[i-1-lookback].close;
+    if (kind === 'channel') {
+      const prior=rows[i-1].close;
+      const window=own?exitLookback:lookback;
+      const earlier=rows.slice(i-1-window,i-1).map(row=>row.close);
+      return own?prior>=Math.min(...earlier):prior>Math.max(...earlier);
+    }
     const priorAverage = (prefix[i] - prefix[i-lookback]) / lookback;
     return rows[i-1].close > priorAverage;
   }
@@ -70,7 +78,7 @@ export function backtest(rows, config) {
     const trades = [], curve = [], fee = feeBps / 10000, slippage = slippageBps / 10000;
     selected.forEach((r,j)=>{
       const i = first+j;
-      const own = target(kind, i);
+      const own = target(kind, i, Boolean(shares));
       if (own && !shares) {
         const executionPrice=r.close*(1+slippage);
         shares = cash / (executionPrice*(1+fee));
@@ -138,7 +146,7 @@ export function compareParameters(rows, config, candidates) {
   if (!config.testStart) throw new Error('Parameter comparison requires a training/test split.');
   if (config.strategy === 'hold') throw new Error('Buy and hold has no lookback parameter to compare.');
   if (!Array.isArray(candidates) || candidates.length < 2 || candidates.length > 12 ||
-      candidates.some(value=>!Number.isInteger(value) || value < (config.strategy === 'sma' ? 2 : 1) || value > 252) ||
+      candidates.some(value=>!Number.isInteger(value) || value < (config.strategy === 'sma' ? 2 : 1) || value > 252 || (config.strategy === 'channel' && value <= (config.exitLookback??10))) ||
       new Set(candidates).size !== candidates.length) {
     throw new Error('Compare 2–12 unique valid lookbacks (1–252; moving average starts at 2).');
   }

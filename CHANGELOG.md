@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-27
+
+- Added a stateful close-channel breakout with separate entry and shorter exit
+  windows, strict threshold crossings, prior-close signals, and next-close fills.
+
 ## 2026-10-26
 
 - Extended transaction-cost sensitivity to rerun every selected fee and slippage

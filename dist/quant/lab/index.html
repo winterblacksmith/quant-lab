@@ -82,6 +82,7 @@
                 >Strategy<select id="strategy">
                   <option value="momentum">Time-series momentum</option>
                   <option value="sma">Moving-average trend filter</option>
+                  <option value="channel">Close-channel breakout</option>
                   <option value="hold">Buy and hold</option>
                 </select></label
               >
@@ -98,6 +99,17 @@
                   value="30"
                   required
               /></label>
+              <label id="exit-lookback-field" hidden
+                >Exit window · trading days<input
+                  id="exit-lookback"
+                  type="number"
+                  min="1"
+                  max="251"
+                  value="10"
+                  required
+                />
+                <span class="fine">Must be shorter than the entry lookback.</span></label
+              >
               <label class="check-field"
                 ><input id="compare-parameters" type="checkbox" />
                 <span>Choose a lookback from training data</span></label
@@ -450,8 +462,10 @@
               Time-series momentum compares yesterday’s close with the close one lookback earlier.
               The moving-average filter compares yesterday’s close with the average of the preceding
               lookback closes, including yesterday. It owns the asset only when yesterday’s close is
-              strictly above that average; equality means cash. Both rules act at today’s close and
-              use the same buy-and-hold benchmark and trade-cost setting.
+              strictly above that average; equality means cash. The close-channel breakout enters
+              above the earlier entry-window closes and exits below the earlier, shorter exit-window
+              closes; equality preserves its position. All rules act at today’s close and use the
+              same buy-and-hold benchmark and trade-cost setting.
             </p>
           </details>
           <details>
@@ -538,6 +552,6 @@
       <div class="palette-help">↑ ↓ navigate <span>↵ open</span></div>
     </dialog>
     <script src="/assets/atlas-shell/app.js?v=d10815200a08" defer></script>
-    <script type="module" src="/assets/quant/lab.js?v=06357bdfb754"></script>
+    <script type="module" src="/assets/quant/lab.js?v=05e78f6d9851"></script>
   </body>
 </html>

@@ -55,7 +55,7 @@ function drawDrawdown(result) {
 function render(experiment) {
   current=experiment;const r=current.result,s=r.strategy.metrics,b=r.benchmark.metrics;
   $('#empty').hidden=true;$('#results').hidden=false;
-  const strategyNames={hold:'Buy and hold',momentum:'Time-series momentum',sma:'Moving-average trend filter'};
+  const strategyNames={hold:'Buy and hold',momentum:'Time-series momentum',sma:'Moving-average trend filter',channel:'Close-channel breakout'};
   $('#result-title').textContent=`${current.data.ticker} / ${strategyNames[r.config.strategy]}`;
   $('#range').textContent=`${r.strategy.curve[0].date} → ${r.strategy.curve.at(-1).date}`;
   $('#metrics').replaceChildren();
@@ -86,6 +86,7 @@ $('#backtest-form').addEventListener('submit',event=>{
   event.preventDefault();try {
     if(!data)throw new Error('Load a dataset first.');
     const config={strategy:$('#strategy').value,start:$('#start').value,end:$('#end').value,testStart:$('#test-start').value,capital:Number($('#capital').value),lookback:Number($('#lookback').value),feeBps:Number($('#fee').value),slippageBps:Number($('#slippage').value)};
+    if(config.strategy==='channel')config.exitLookback=Number($('#exit-lookback').value);
     if($('#compare-parameters').checked)config.parameterLookbacks=$('#parameter-candidates').value.split(',').map(value=>Number(value.trim()));
     if($('#walk-forward').checked)config.walkForwardWindow=Number($('#walk-forward-window').value);
     if($('#cost-sensitivity').checked){config.costSensitivityBps=$('#cost-scenarios-input').value.split(',').map(value=>Number(value.trim()));config.costSensitivitySlippageBps=$('#slippage-scenarios-input').value.split(',').map(value=>Number(value.trim()));}
@@ -107,11 +108,13 @@ $('#strategy').addEventListener('change',()=>{
   $('#parameter-candidates-field').hidden=!$('#compare-parameters').checked;
   $('#lookback').disabled=strategy==='hold'||$('#compare-parameters').checked;
   $('#lookback').min=strategy==='sma'?'2':'1';
+  $('#exit-lookback-field').hidden=strategy!=='channel';
   if(strategy==='sma' && Number($('#lookback').value)<2)$('#lookback').value='2';
   $('#rule').textContent={
     hold:'Buy at the first selected close and hold through the final close.',
     momentum:'Own the asset when its prior closing price is above its close N sessions earlier. Otherwise, hold cash.',
-    sma:'Own the asset when the prior close is strictly above the average of the previous N closes (N ≥ 2). Otherwise, hold cash.'
+    sma:'Own the asset when the prior close is strictly above the average of the previous N closes (N ≥ 2). Otherwise, hold cash.',
+    channel:'Enter when the prior close strictly exceeds every earlier close in the entry window; exit when it falls strictly below every earlier close in the shorter exit window. Equality keeps the current position.'
   }[strategy];
 });
 $('#dataset').addEventListener('change',()=>{

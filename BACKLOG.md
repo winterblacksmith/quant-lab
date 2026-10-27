@@ -1,7 +1,7 @@
 # Orion Quant Lab backlog
 
 ## Next
-- Add a close-channel breakout after validating its signal timing against the strategy roadmap.
+- Add a dual moving-average crossover after validating its signal timing against the strategy roadmap.
 
 ## Later
 - Additional strategies and Strategy Arena using the priorities and readiness rules in
@@ -12,6 +12,8 @@
 - Add a second asset only after its data quality and adjustment basis are documented.
 
 ## Completed
+- Stateful close-channel breakout with strict entry/exit thresholds, delayed execution,
+  explicit warmup, and a shorter exit window.
 - Transaction-cost sensitivity across independently varied fee and slippage assumptions,
   reported as ordered combinations without performance ranking.
 - Explicit fixed slippage assumption modeled through adverse buy and sell execution
