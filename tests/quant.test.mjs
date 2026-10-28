@@ -57,6 +57,31 @@ test('moving-average filter enforces warmup, charges both trades, and prevents l
   assert.equal(result.strategy.trades[0].date,changed.strategy.trades[0].date);
 });
 
+test('dual moving-average crossover uses prior windows and holds cash at equality',()=>{
+  const settings={...config,strategy:'dual-sma',shortLookback:2,lookback:3,start:'2024-01-04',end:'2024-01-08'};
+  const result=backtest(rows([9,9,12,15,12,6,6,9]),settings);
+  assert.deepEqual(result.strategy.trades.map(trade=>[trade.date,trade.side]),[
+    ['2024-01-04','BUY'],['2024-01-07','SELL']
+  ]);
+  assert.ok(Math.abs(result.strategy.metrics.finalValue-100*6/15)<1e-10);
+  const equal=backtest(rows([10,10,10,10,10,10]),{...settings,start:'2024-01-04',end:'2024-01-06'});
+  assert.equal(equal.strategy.trades.length,0);
+});
+
+test('dual moving-average crossover validates windows, charges costs, and prevents lookahead',()=>{
+  const prices=[9,9,12,15,12,6,6,9],data=rows(prices);
+  const settings={...config,strategy:'dual-sma',shortLookback:2,lookback:3,start:'2024-01-04',end:'2024-01-08',feeBps:100};
+  assert.throws(()=>backtest(data,{...settings,shortLookback:3}),/lookbacks/);
+  assert.throws(()=>backtest(data,{...settings,shortLookback:0}),/lookbacks/);
+  assert.throws(()=>backtest(data,{...settings,start:'2024-01-03'}),/Dual moving average needs/);
+  const result=backtest(data,settings);
+  assert.equal(result.strategy.trades.length,2);
+  assert.ok(Math.abs(result.strategy.metrics.finalValue-100/(15*1.01)*6*.99)<1e-10);
+  const changed=backtest(rows([...prices.slice(0,4),120,1,1,1]),settings);
+  assert.deepEqual(result.strategy.curve[0].shares,changed.strategy.curve[0].shares);
+  assert.equal(result.strategy.trades[0].date,changed.strategy.trades[0].date);
+});
+
 test('close-channel breakout persists between strict entry and exit thresholds',()=>{
   const settings={...config,strategy:'channel',lookback:3,exitLookback:2,start:'2024-01-05',end:'2024-01-08'};
   const result=backtest(rows([10,11,12,13,14,14,9,8]),settings);

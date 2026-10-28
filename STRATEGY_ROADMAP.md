@@ -30,7 +30,7 @@ task increment.
 - **Validation:** warmup boundary, equality behavior, delayed execution, fees on
   a crossover, and proof that future prices cannot change earlier positions.
 
-### Dual moving-average crossover
+### Dual moving-average crossover — implemented
 
 - **Rule:** own the asset when the short average through `t-1` is above the long
   average through `t-1`; otherwise hold cash. Execute at `close[t]`.

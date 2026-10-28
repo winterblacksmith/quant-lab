@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28
+
+- Added a dual moving-average crossover with validated short and long windows,
+  prior-close averages, strict equality behavior, and next-close fills.
+
 ## 2026-10-27
 
 - Added a stateful close-channel breakout with separate entry and shorter exit

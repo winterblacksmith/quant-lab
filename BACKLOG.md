@@ -1,7 +1,7 @@
 # Orion Quant Lab backlog
 
 ## Next
-- Add a dual moving-average crossover after validating its signal timing against the strategy roadmap.
+- Define and add a no-leverage volatility-targeting overlay with explicit turnover reporting.
 
 ## Later
 - Additional strategies and Strategy Arena using the priorities and readiness rules in
@@ -12,6 +12,8 @@
 - Add a second asset only after its data quality and adjustment basis are documented.
 
 ## Completed
+- Dual moving-average crossover with short/long prior-close averages, strict equality
+  behavior, delayed execution, explicit warmup, and ordered-window validation.
 - Stateful close-channel breakout with strict entry/exit thresholds, delayed execution,
   explicit warmup, and a shorter exit window.
 - Transaction-cost sensitivity across independently varied fee and slippage assumptions,

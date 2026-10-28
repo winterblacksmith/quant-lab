@@ -1,4 +1,4 @@
-import {backtest, drawdowns, parseCSV, validateRows} from './engine.js?v=8d2e8681dffa';
+import {backtest, drawdowns, parseCSV, validateRows} from './engine.js?v=955afad17002';
 import {comparison, MAX_IMPORTED_BYTES, restoreExperiment} from './experiments.js?v=a26cbbc1082f';
 const $ = s => document.querySelector(s), money = n => n.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}), pct = n => `${(n*100).toFixed(2)}%`;
 let bundled, data, current;
@@ -55,7 +55,7 @@ function drawDrawdown(result) {
 function render(experiment) {
   current=experiment;const r=current.result,s=r.strategy.metrics,b=r.benchmark.metrics;
   $('#empty').hidden=true;$('#results').hidden=false;
-  const strategyNames={hold:'Buy and hold',momentum:'Time-series momentum',sma:'Moving-average trend filter',channel:'Close-channel breakout'};
+  const strategyNames={hold:'Buy and hold',momentum:'Time-series momentum',sma:'Moving-average trend filter','dual-sma':'Dual moving-average crossover',channel:'Close-channel breakout'};
   $('#result-title').textContent=`${current.data.ticker} / ${strategyNames[r.config.strategy]}`;
   $('#range').textContent=`${r.strategy.curve[0].date} → ${r.strategy.curve.at(-1).date}`;
   $('#metrics').replaceChildren();
@@ -87,6 +87,7 @@ $('#backtest-form').addEventListener('submit',event=>{
     if(!data)throw new Error('Load a dataset first.');
     const config={strategy:$('#strategy').value,start:$('#start').value,end:$('#end').value,testStart:$('#test-start').value,capital:Number($('#capital').value),lookback:Number($('#lookback').value),feeBps:Number($('#fee').value),slippageBps:Number($('#slippage').value)};
     if(config.strategy==='channel')config.exitLookback=Number($('#exit-lookback').value);
+    if(config.strategy==='dual-sma')config.shortLookback=Number($('#short-lookback').value);
     if($('#compare-parameters').checked)config.parameterLookbacks=$('#parameter-candidates').value.split(',').map(value=>Number(value.trim()));
     if($('#walk-forward').checked)config.walkForwardWindow=Number($('#walk-forward-window').value);
     if($('#cost-sensitivity').checked){config.costSensitivityBps=$('#cost-scenarios-input').value.split(',').map(value=>Number(value.trim()));config.costSensitivitySlippageBps=$('#slippage-scenarios-input').value.split(',').map(value=>Number(value.trim()));}
@@ -109,11 +110,13 @@ $('#strategy').addEventListener('change',()=>{
   $('#lookback').disabled=strategy==='hold'||$('#compare-parameters').checked;
   $('#lookback').min=strategy==='sma'?'2':'1';
   $('#exit-lookback-field').hidden=strategy!=='channel';
+  $('#short-lookback-field').hidden=strategy!=='dual-sma';
   if(strategy==='sma' && Number($('#lookback').value)<2)$('#lookback').value='2';
   $('#rule').textContent={
     hold:'Buy at the first selected close and hold through the final close.',
     momentum:'Own the asset when its prior closing price is above its close N sessions earlier. Otherwise, hold cash.',
     sma:'Own the asset when the prior close is strictly above the average of the previous N closes (N ≥ 2). Otherwise, hold cash.',
+    'dual-sma':'Own the asset when the short average through the prior close is strictly above the long average through that close. Equality means cash.',
     channel:'Enter when the prior close strictly exceeds every earlier close in the entry window; exit when it falls strictly below every earlier close in the shorter exit window. Equality keeps the current position.'
   }[strategy];
 });
