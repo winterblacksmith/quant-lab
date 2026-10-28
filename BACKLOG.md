@@ -1,8 +1,7 @@
 # Orion Quant Lab backlog
 
 ## Next
-- Import exported JSON experiments and compare saved runs side by side.
-- Add train/test separation before any parameter search.
+- Define and add a no-leverage volatility-targeting overlay with explicit turnover reporting.
 
 ## Later
 - Additional strategies and Strategy Arena using the priorities and readiness rules in
@@ -13,6 +12,22 @@
 - Add a second asset only after its data quality and adjustment basis are documented.
 
 ## Completed
+- Dual moving-average crossover with short/long prior-close averages, strict equality
+  behavior, delayed execution, explicit warmup, and ordered-window validation.
+- Stateful close-channel breakout with strict entry/exit thresholds, delayed execution,
+  explicit warmup, and a shorter exit window.
+- Transaction-cost sensitivity across independently varied fee and slippage assumptions,
+  reported as ordered combinations without performance ranking.
+- Explicit fixed slippage assumption modeled through adverse buy and sell execution
+  prices, reported separately from proportional transaction fees.
+- Transaction-cost sensitivity across a small disclosed set of assumptions, rerunning
+  one fixed configuration without ranking or selecting a winner.
+- Guarded lookback comparison ranked by training return only, with disclosed search
+  breadth and untouched test results.
+- Expanding walk-forward validation with non-overlapping out-of-sample folds and
+  compounded strategy-versus-benchmark test returns.
+- Fixed train/test separation with continuous portfolio state, independent period
+  metrics, and an explicit out-of-sample test result.
 - `/quant/` landing page and `/quant/lab/` research workspace.
 - Historical SPY snapshot, CSV import, configurable momentum and buy-and-hold.
 - Moving-average trend filter with delayed signals, the same fees and benchmark,
@@ -21,6 +36,8 @@
   hypothetical spot scenarios, and numerical validation tests.
 - Delayed signal execution, transaction costs, benchmark, metrics, chart, trades.
 - Browser-local experiments, self-contained JSON and equity CSV export.
+- Validated JSON experiment import with recomputed results and side-by-side comparison
+  for up to three archived runs.
 - Calculation tests, methodology and first learning note.
 
 - Daily API refresh, completed-session filtering, dataset hashes and freshness UI.

@@ -22,9 +22,11 @@ Signals use only closes available before execution. At close t, momentum uses
 close[t-1] / close[t-1-lookback] > 1. Positions established at close t first earn
 the return from t to t+1. Warmup observations precede the selected test window.
 Buy-and-hold enters at the first test close. Both pay the same proportional fee
-on each entry or exit. Fractional shares; long or cash only; cash earns zero;
-no leverage, taxes, separate spread or slippage. Open positions are marked to
-market at the last close, without forced liquidation. Adjusted prices model a
+on each entry or exit. A separate fixed slippage assumption raises buy execution
+prices above the observed close and lowers sell execution prices below it; this is
+an explicit haircut rather than an estimate of market impact or a variable spread.
+Fractional shares; long or cash only; cash earns zero; no leverage or taxes. Open
+positions are marked to market at the last close, without forced liquidation. Adjusted prices model a
 reinvested distribution series, not actual historical share counts or fills.
 
 Return = final equity / initial capital - 1. Annualized return is the geometric
@@ -35,11 +37,53 @@ rate; undefined when deviation is zero. Drawdown includes starting capital as
 an initial high-water mark. Annualization assumes daily trading observations;
 import validation cannot independently verify a provider's trading calendar.
 
+Each new experiment has a fixed training/test split with at least three observations
+on each side. The strategy runs continuously across the boundary so an existing
+position and its transaction history are not reset. Training metrics use starting
+capital as their baseline; test metrics use the portfolio value immediately before
+the first test observation. The split is descriptive rather than an automated
+optimizer: researchers choose parameters from training evidence and reserve the
+test result for out-of-sample evaluation. Older exported experiments without a
+split remain importable and display their original full-period result.
+
+Optional expanding walk-forward validation begins at that same test boundary. Each
+fold trains from the selected start through the prior fold, then evaluates the next
+non-overlapping 3–252-observation test window. A final short remainder is included
+in the preceding fold; fewer than two folds is rejected. Strategy state is continuous
+across the training/test boundary within each fold, but each fold is independently
+initialized to avoid carrying capital between repeated simulations. Aggregate
+strategy and benchmark returns compound only the disjoint out-of-sample windows.
+The validator applies one fixed configuration and does not search or rank parameters.
+
+Optional guarded parameter comparison accepts 2–12 unique lookbacks and ranks them by
+training-period total return, with the shorter lookback breaking exact ties. The selected
+lookback is then used for the full continuous run, whose test metrics remain out of the
+ranking. The result records every candidate's training return, Sharpe, drawdown, and trade
+count plus the number of configurations tried so the search breadth is visible.
+
+Optional transaction-cost sensitivity accepts 2–6 unique fee assumptions and 1–6 unique
+slippage assumptions from 0–100 basis points. It reruns one fixed strategy, lookback,
+date range, and capital setting for every fee/slippage combination. Scenarios are ordered
+by fee and then slippage rather than performance and report full-period and test returns,
+benchmark return, fees, modeled slippage, final value, and unchanged trade count. It is a
+robustness view, not a parameter selector.
+
 The moving-average filter owns the asset when the close at `t-1` is strictly
 greater than the arithmetic average of closes `t-lookback` through `t-1`.
 Equality means cash. It uses the same delayed execution, long-or-cash sizing,
 transaction costs, and buy-and-hold benchmark as momentum. At least `lookback`
 warmup observations must precede the selected start date.
+
+The dual moving-average crossover owns the asset when the arithmetic average of
+the short window through `t-1` is strictly above the arithmetic average of the
+long window through `t-1`; equality means cash. Both windows include the prior
+close, require `short < long <= 252`, and the long window determines warmup.
+
+The close-channel breakout enters when the close at `t-1` is strictly above every
+earlier close in its entry window and exits when that prior close is strictly below
+every earlier close in its shorter exit window. Equality preserves the current
+position, so repeated threshold touches do not create trades. Both signals execute
+at close `t`; the longer entry window determines the required warmup.
 
 ## European options calculator
 
@@ -64,6 +108,9 @@ Each saved run records engine version, config,
 source metadata, all input rows, results and timestamp. Exports survive browser
 storage clearing. Local storage is limited to the latest 10 experiments. There
 is no account, cloud sync, live quote feed, or claim of predictive performance.
+Imported experiment JSON is schema-checked and its results are recomputed from the
+embedded rows and configuration before storage or comparison; exported metrics are
+not trusted as authoritative.
 
 ## Daily data refresh
 
